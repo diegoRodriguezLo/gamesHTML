@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍪 Cookie Empire — Idle Clicker</title>
+<style>
+  :root{
+    --bg1:#fdf6ec; --bg2:#f3e0c0;
+    --card:#fffdf8; --border:#e6d3b3;
+    --ink:#4a2f1b; --ink-soft:#8a6a4d;
+    --accent:#b06a2c; --accent-dark:#7a4a21;
+    --gold:#e8a33d; --good:#3d8b40;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"Segoe UI", system-ui, sans-serif;
+    background:linear-gradient(160deg,var(--bg1),var(--bg2));
+    color:var(--ink); min-height:100vh; padding:16px;
+  }
+  header{ text-align:center; margin-bottom:14px; }
+  header h1{ font-size:2rem; letter-spacing:.5px; }
+  header p{ color:var(--ink-soft); font-size:.95rem; }
+  .game{
+    display:grid; grid-template-columns:330px 1fr 370px;
+    gap:14px; max-width:1300px; margin:0 auto; align-items:start;
+  }
+  .panel{
+    background:var(--card); border:2px solid var(--border);
+    border-radius:16px; padding:16px; box-shadow:0 4px 14px rgba(122,74,33,.08);
+  }
+  .panel h2{
+    font-size:1.05rem; margin-bottom:10px; display:flex; align-items:center; gap:8px;
+    border-bottom:2px dashed var(--border); padding-bottom:8px;
+  }
+  /* ---- clicker column ---- */
+  .clicker{ text-align:center; position:relative; }
+  .cookie-count{ font-size:2rem; font-weight:800; color:var(--accent-dark); line-height:1.1; }
+  .cookie-label{ color:var(--ink-soft); font-size:.85rem; margin-bottom:4px; }
+  .cps-line{ font-size:.9rem; color:var(--ink-soft); margin-bottom:10px; }
+  .cps-line b{ color:var(--good); }
+  #bigCookie{
+    font-size:130px; line-height:1; background:none; border:none; cursor:pointer;
+    user-select:none; -webkit-user-select:none; transition:transform .06s ease;
+    filter:drop-shadow(0 10px 14px rgba(122,74,33,.35));
+    display:inline-block; touch-action:manipulation;
+  }
+  #bigCookie:active{ transform:scale(.88) rotate(-6deg); }
+  #floatLayer{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .float-num{
+    position:absolute; font-weight:800; color:var(--accent);
+    animation:floatUp 1s ease-out forwards; font-size:1.1rem;
+    text-shadow:0 1px 0 #fff;
+  }
+  @keyframes floatUp{
+    0%{opacity:1; transform:translateY(0) scale(1);}
+    100%{opacity:0; transform:translateY(-70px) scale(1.3);}
+  }
+  .stats{ text-align:left; margin-top:14px; font-size:.88rem; }
+  .stats div{ display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dotted var(--border); }
+  .stats span:last-child{ font-weight:700; }
+  .btn-row{ display:flex; gap:8px; margin-top:12px; }
+  .small-btn{
+    flex:1; padding:8px 6px; border:2px solid var(--border); border-radius:10px;
+    background:#fff; color:var(--ink); cursor:pointer; font-size:.8rem; font-weight:600;
+  }
+  .small-btn:hover{ border-color:var(--accent); }
+  .small-btn.danger:hover{ border-color:#c0392b; color:#c0392b; }
+  /* ---- shop column ---- */
+  .buy-row{ display:flex; gap:6px; margin-bottom:10px; align-items:center; font-size:.85rem; color:var(--ink-soft); }
+  .buy-btn{
+    padding:5px 14px; border:2px solid var(--border); border-radius:999px;
+    background:#fff; cursor:pointer; font-weight:700; color:var(--ink-soft); font-size:.85rem;
+  }
+  .buy-btn.active{ background:var(--accent); border-color:var(--accent-dark); color:#fff; }
+  .shop-item{
+    display:flex; align-items:center; gap:12px; width:100%;
+    background:#fff; border:2px solid var(--border); border-radius:12px;
+    padding:10px 12px; margin-bottom:8px; cursor:pointer; text-align:left;
+    transition:transform .08s ease, border-color .12s;
+    font-family:inherit; color:var(--ink);
+  }
+  .shop-item:hover:not(:disabled){ border-color:var(--accent); transform:translateX(3px); }
+  .shop-item:disabled{ opacity:.45; cursor:not-allowed; }
+  .shop-item .emoji{ font-size:2rem; width:44px; text-align:center; }
+  .shop-item .info{ flex:1; min-width:0; }
+  .shop-item .info .name{ font-weight:800; font-size:.95rem; }
+  .shop-item .info .cost{ font-size:.85rem; color:var(--accent-dark); font-weight:700; }
+  .shop-item .info .each{ font-size:.75rem; color:var(--ink-soft); }
+  .shop-item .owned{
+    font-size:1.4rem; font-weight:900; color:var(--border); min-width:44px; text-align:right;
+  }
+  .shop-item.can-afford .owned{ color:var(--accent); }
+  .shop-item.can-afford .cost{ color:var(--good); }
+  /* ---- upgrades / milestones ---- */
+  .upg{
+    display:flex; gap:10px; align-items:center; width:100%; text-align:left;
+    background:#fff; border:2px solid var(--border); border-radius:12px;
+    padding:8px 10px; margin-bottom:8px; cursor:pointer; font-family:inherit; color:var(--ink);
+  }
+  .upg:hover:not(:disabled){ border-color:var(--gold); }
+  .upg:disabled{ opacity:.45; cursor:not-allowed; }
+  .upg .emoji{ font-size:1.6rem; }
+  .upg .info{ flex:1; }
+  .upg .info .name{ font-weight:800; font-size:.88rem; }
+  .upg .info .desc{ font-size:.75rem; color:var(--ink-soft); }
+  .upg .cost{ font-weight:800; font-size:.82rem; color:var(--accent-dark); white-space:nowrap; }
+  .upg.can-afford .cost{ color:var(--good); }
+  .owned-chips{ display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+  .owned-chips span{
+    font-size:1.1rem; background:#fff6e3; border:1px solid var(--border);
+    border-radius:8px; padding:2px 6px;
+  }
+  .ms-note{ font-size:.78rem; color:var(--ink-soft); margin-bottom:8px; }
+  .ms-grid{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .ms{
+    border:2px solid var(--border); border-radius:10px; padding:6px 8px;
+    font-size:.72rem; opacity:.45; background:#fff;
+  }
+  .ms.done{ opacity:1; border-color:var(--gold); background:#fff6e3; }
+  .ms .name{ font-weight:800; font-size:.78rem; }
+  /* ---- toast + confetti + modal ---- */
+  #toasts{ position:fixed; top:14px; right:14px; z-index:50; display:flex; flex-direction:column; gap:8px; }
+  .toast{
+    background:var(--accent-dark); color:#fff; padding:10px 16px; border-radius:12px;
+    font-size:.9rem; font-weight:700; box-shadow:0 6px 16px rgba(0,0,0,.25);
+    animation:toastIn .3s ease, toastOut .4s ease 3.6s forwards;
+  }
+  @keyframes toastIn{ from{transform:translateX(120%);} to{transform:none;} }
+  @keyframes toastOut{ to{transform:translateX(120%); opacity:0;} }
+  .confetti{
+    position:fixed; top:-12px; width:10px; height:14px; z-index:60; pointer-events:none;
+    animation:fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform:translateY(110vh) rotate(720deg); opacity:.7; }
+  }
+  .modal-back{
+    position:fixed; inset:0; background:rgba(74,47,27,.55); z-index:70;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .modal{
+    background:var(--card); border-radius:16px; padding:24px; max-width:380px;
+    text-align:center; border:3px solid var(--gold); box-shadow:0 12px 40px rgba(0,0,0,.3);
+  }
+  .modal h3{ margin-bottom:8px; }
+  .modal p{ color:var(--ink-soft); margin-bottom:14px; font-size:.92rem; }
+  .modal .big{ font-size:1.6rem; font-weight:900; color:var(--accent-dark); }
+  .modal button{
+    background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:10px 26px; font-size:1rem; font-weight:800; cursor:pointer;
+  }
+  .oculto{ display:none !important; }
+  footer{ text-align:center; color:var(--ink-soft); font-size:.75rem; margin-top:16px; }
+  @media (max-width:1050px){
+    .game{ grid-template-columns:1fr; }
+    .clicker #bigCookie{ font-size:110px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🍪 Cookie Empire</h1>
+  <p>From a tiny cookie stand to a global megaplant — click, hire, automate!</p>
+</header>
+
+<div class="game">
+  <!-- LEFT: clicker -->
+  <section class="panel clicker">
+    <div id="floatLayer"></div>
+    <div class="cookie-count" id="cookieCount">0</div>
+    <div class="cookie-label">cookies</div>
+    <div class="cps-line"><b id="cpsLine">0</b> per second &nbsp;•&nbsp; <b id="clickPowerLine">1</b> per click</div>
+    <button id="bigCookie" title="Click to bake!">🍪</button>
+    <div class="stats">
+      <div><span>Total baked (all time)</span><span id="stTotal">0</span></div>
+      <div><span>Total clicks</span><span id="stClicks">0</span></div>
+      <div><span>Workers &amp; machines</span><span id="stWorkers">0</span></div>
+      <div><span>Milestone bonus</span><span id="stBonus">+0%</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="small-btn" id="saveBtn">💾 Save</button>
+      <button class="small-btn danger" id="resetBtn">🗑 Reset</button>
+    </div>
+  </section>
+
+  <!-- MIDDLE: shop -->
+  <section class="panel">
+    <h2>👷 Workers &amp; Machines</h2>
+    <div class="buy-row">
+      Buy amount:
+      <button class="buy-btn active" data-amt="1">x1</button>
+      <button class="buy-btn" data-amt="10">x10</button>
+      <button class="buy-btn" data-amt="max">Max</button>
+    </div>
+    <div id="shopList"></div>
+  </section>
+
+  <!-- RIGHT: upgrades + milestones -->
+  <section class="panel">
+    <h2>⬆️ Upgrades</h2>
+    <div id="upgList"><p class="ms-note">Keep baking and hiring to unlock upgrades…</p></div>
+    <div class="owned-chips" id="ownedChips"></div>
+    <h2 style="margin-top:16px;">🏆 Milestones <span id="msCount" style="margin-left:auto;font-size:.85rem;color:var(--ink-soft);"></span></h2>
+    <p class="ms-note">Each milestone grants a permanent <b>+2%</b> to ALL production.</p>
+    <div class="ms-grid" id="msGrid"></div>
+  </section>
+</div>
+
+<footer>Progress auto-saves every 15 seconds. Offline earnings: 50% rate, up to 8 hours.</footer>
+
+<div class="modal-back oculto" id="offlineModal">
+  <div class="modal">
+    <h3>🌙 Welcome back!</h3>
+    <p>While you were away, your empire kept baking:</p>
+    <p class="big" id="offlineAmount">+0 🍪</p>
+    <button id="offlineOk">Sweet!</button>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+"use strict";
+/* ================= DATA ================= */
+const BUILDINGS = [
+  { id:"spoon",     name:"Sturdy Spoon",        emoji:"🥄", cost:15,     cps:0.1 },
+  { id:"kid",       name:"Helper Kid",          emoji:"🧒", cost:100,    cps:1 },
+  { id:"stand",     name:"Cookie Stand",        emoji:"🏪", cost:1100,   cps:8 },
+  { id:"truck",     name:"Food Truck",          emoji:"🚚", cost:12000,  cps:47 },
+  { id:"bakery",    name:"Bakery",              emoji:"🧁", cost:130000, cps:260 },
+  { id:"warehouse", name:"Distribution Hub",    emoji:"📦", cost:1.4e6,  cps:1400 },
+  { id:"factory",   name:"Cookie Factory",      emoji:"🏭", cost:2e7,    cps:7800 },
+  { id:"megaplant", name:"Cookie Megaplant",    emoji:"🌆", cost:3.3e8,  cps:44000 },
+];
+
+const UPGRADES = [
+  // click power
+  { id:"u_spoon",   name:"Reinforced Spoon",      emoji:"🥄", cost:200,   type:"click", mult:2, desc:"Clicks are twice as strong.", req:s=>s.totalClicks>=20 },
+  { id:"u_spat",    name:"Golden Spatula",        emoji:"🍴", cost:2500,  type:"click", mult:2, desc:"Clicks are twice as strong.", req:s=>s.totalClicks>=100 },
+  { id:"u_recipe",  name:"Secret Recipe",         emoji:"📜", cost:25000, type:"click", mult:3, desc:"Clicks x3. Grandma would be proud.", req:s=>s.totalBaked>=15000 },
+  { id:"u_espr",    name:"Barista Coffee Machine",emoji:"☕", cost:2.5e5, type:"click", mult:3, desc:"Caffeinated clicking: x3.", req:s=>s.totalBaked>=150000 },
+  { id:"u_robot",   name:"Robotic Frosting Arm",  emoji:"🦾", cost:5e6,   type:"click", mult:4, desc:"Clicks x4. Beep boop bake.", req:s=>s.totalBaked>=3e6 },
+  { id:"u_laser",   name:"Laser Cookie Cutter",   emoji:"🔦", cost:1e8,   type:"click", mult:5, desc:"Clicks x5. Precision dough.", req:s=>s.totalBaked>=5e7 },
+  // per-building x2 (unlock at 10 owned)
+  { id:"b_spoon",   name:"Non-slip Grip",         emoji:"🧤", cost:500,    type:"building", target:"spoon",     mult:2, desc:"Spoons produce x2.", req:s=>bCount("spoon")>=10 },
+  { id:"b_kid",     name:"Aprons for Helpers",    emoji:"🎽", cost:5000,   type:"building", target:"kid",       mult:2, desc:"Helper Kids produce x2.", req:s=>bCount("kid")>=10 },
+  { id:"b_stand",   name:"Neon Stand Sign",       emoji:"💡", cost:55000,  type:"building", target:"stand",     mult:2, desc:"Cookie Stands produce x2.", req:s=>bCount("stand")>=10 },
+  { id:"b_truck",   name:"GPS Truck Routes",      emoji:"🗺️", cost:6e5,    type:"building", target:"truck",     mult:2, desc:"Food Trucks produce x2.", req:s=>bCount("truck")>=10 },
+  { id:"b_bakery",  name:"Convection Ovens",      emoji:"🔥", cost:6.5e6,  type:"building", target:"bakery",    mult:2, desc:"Bakeries produce x2.", req:s=>bCount("bakery")>=10 },
+  { id:"b_wh",      name:"Forklift Fleet",        emoji:"🚜", cost:7e7,    type:"building", target:"warehouse", mult:2, desc:"Distribution Hubs produce x2.", req:s=>bCount("warehouse")>=10 },
+  { id:"b_factory", name:"Assembly Line",         emoji:"⚙️", cost:1e9,    type:"building", target:"factory",   mult:2, desc:"Factories produce x2.", req:s=>bCount("factory")>=10 },
+  { id:"b_mega",    name:"AI Quality Control",    emoji:"🤖", cost:1.5e10, type:"building", target:"megaplant", mult:2, desc:"Megaplants produce x2.", req:s=>bCount("megaplant")>=10 },
+  // global
+  { id:"u_franch",  name:"Franchise License",     emoji:"🤝", cost:1e6,  type:"global", mult:1.5, desc:"ALL production x1.5.", req:s=>s.totalBaked>=5e5 },
+  { id:"u_brand",   name:"National Brand",        emoji:"📺", cost:5e7,  type:"global", mult:2,   desc:"ALL production x2. Cookies everywhere!", req:s=>s.totalBaked>=2e7 },
+  { id:"u_mono",    name:"Cookie Monopoly",       emoji:"👑", cost:5e9,  type:"global", mult:3,   desc:"ALL production x3. The world runs on cookies.", req:s=>s.totalBaked>=2e9 },
+];
+
+const MILESTONES = [
+  { id:"m_100",     name:"First Batch",        emoji:"🔥", desc:"Bake 100 cookies.",            check:s=>s.totalBaked>=100 },
+  { id:"m_1k",      name:"Neighborhood Fav.",  emoji:"🏘️", desc:"Bake 1,000 cookies.",          check:s=>s.totalBaked>=1e3 },
+  { id:"m_10k",     name:"Local Legend",       emoji:"🌟", desc:"Bake 10,000 cookies.",         check:s=>s.totalBaked>=1e4 },
+  { id:"m_100k",    name:"Regional Brand",     emoji:"🗺️", desc:"Bake 100K cookies.",           check:s=>s.totalBaked>=1e5 },
+  { id:"m_1m",      name:"Cookie Mogul",       emoji:"💼", desc:"Bake 1 million cookies.",      check:s=>s.totalBaked>=1e6 },
+  { id:"m_10m",     name:"Cookie Tycoon",      emoji:"🎩", desc:"Bake 10 million cookies.",     check:s=>s.totalBaked>=1e7 },
+  { id:"m_100m",    name:"Cookie Empire",      emoji:"🏰", desc:"Bake 100 million cookies.",    check:s=>s.totalBaked>=1e8 },
+  { id:"m_1b",      name:"Cookie World Order", emoji:"🌍", desc:"Bake 1 billion cookies.",      check:s=>s.totalBaked>=1e9 },
+  { id:"m_c100",    name:"Blistered Fingers",  emoji:"👆", desc:"Click 100 times.",             check:s=>s.totalClicks>=100 },
+  { id:"m_c1k",     name:"Click Club",         emoji:"🖱️", desc:"Click 1,000 times.",           check:s=>s.totalClicks>=1e3 },
+  { id:"m_c10k",    name:"Legendary Clicker",  emoji:"⚡", desc:"Click 10,000 times.",          check:s=>s.totalClicks>=1e4 },
+  { id:"m_own10",   name:"Small Business",     emoji:"🏪", desc:"Own 10 of any one thing.",     check:s=>BUILDINGS.some(b=>bCount(b.id)>=10) },
+  { id:"m_factory", name:"Welcome to Industry",emoji:"🏭", desc:"Own a Cookie Factory.",        check:s=>bCount("factory")>=1 },
+  { id:"m_all",     name:"Full Supply Chain",  emoji:"🔗", desc:"Own at least 1 of everything.",check:s=>BUILDINGS.every(b=>bCount(b.id)>=1) },
+  { id:"m_cps100",  name:"Passive Income",     emoji:"💤", desc:"Reach 100 cookies/sec.",       check:()=>cps()>=100 },
+  { id:"m_cps10k",  name:"Money Printer",      emoji:"🖨️", desc:"Reach 10,000 cookies/sec.",    check:()=>cps()>=1e4 },
+];
+
+/* ================= STATE ================= */
+const SAVE_KEY = "cookieE…e_v1";
+function defaultState(){
+  return { cookies:0, totalBaked:0, totalClicks:0,
+           buildings:{}, upgrades:{}, milestones:{}, lastSave:Date.now() };
+}
+let state = defaultState();
+let buyAmount = 1; // 1, 10, or "max"
+
+function bCount(id){ return state.buildings[id] || 0; }
+function doneMilestones(){ return MILESTONES.filter(m=>state.milestones[m.id]).length; }
+
+function globalMult(){
+  let m = 1;
+  for(const u of UPGRADES) if(u.type==="global" && state.upgrades[u.id]) m *= u.mult;
+  return m * (1 + 0.02 * doneMilestones());
+}
+function clickMult(){
+  let m = 1;
+  for(const u of UPGRADES) if(u.type==="click" && state.upgrades[u.id]) m *= u.mult;
+  return m;
+}
+function bMult(id){
+  let m = 1;
+  for(const u of UPGRADES) if(u.type==="building" && u.target===id && state.upgrades[u.id]) m *= u.mult;
+  return m;
+}
+function cps(){
+  let total = 0;
+  for(const b of BUILDINGS) total += bCount(b.id) * b.cps * bMult(b.id);
+  return total * globalMult();
+}
+function clickPower(){ return 1 * clickMult() * globalMult(); }
+
+const GROWTH = 1.15;
+function unitCost(b){ return b.cost * Math.pow(GROWTH, bCount(b.id)); }
+function bulkCost(b, n){
+  const c = unitCost(b);
+  return Math.ceil(c * (Math.pow(GROWTH, n) - 1) / (GROWTH - 1));
+}
+function maxAffordable(b){
+  const c = unitCost(b);
+  const n = Math.floor(Math.log(1 + state.cookies * (GROWTH - 1) / c) / Math.log(GROWTH));
+  return Math.max(0, n);
+}
+function buyCount(b){ return buyAmount === "max" ? maxAffordable(b) : buyAmount; }
+
+/* ================= FORMAT ================= */
+const UNITS = ["","K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc"];
+function fmt(n){
+  if(!isFinite(n)) return "∞";
+  if(n < 1000) return (n < 10 && n % 1 !== 0) ? n.toFixed(1) : Math.floor(n).toLocaleString("en-US");
+  let tier = Math.floor(Math.log10(n) / 3);
+  tier = Math.min(tier, UNITS.length - 1);
+  const scaled = n / Math.pow(1000, tier);
+  return scaled.toFixed(scaled < 10 ? 2 : (scaled < 100 ? 1 : 0)) + UNITS[tier];
+}
+
+/* ================= AUDIO ================= */
+let AC = null;
+function beep(freq, dur, type, gain){
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || "sine"; o.frequency.value = freq;
+    g.gain.setValueAtTime(gain || 0.12, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + (dur || 0.06));
+    o.connect(g); g.connect(AC.destination);
+    o.start(); o.stop(AC.currentTime + (dur || 0.06));
+  }catch(e){ /* audio unavailable */ }
+}
+const sndClick   = () => beep(480 + Math.random()*90, 0.05, "triangle", 0.10);
+const sndBuy     = () => { beep(392, 0.08, "square", 0.07); setTimeout(()=>beep(587, 0.1, "square", 0.07), 70); };
+const sndUpgrade = () => { beep(523, 0.09, "sine", 0.1); setTimeout(()=>beep(784, 0.12, "sine", 0.1), 90); };
+const sndMilestone = () => [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.15,"sine",0.12), i*110));
+
+/* ================= FX ================= */
+function toast(msg){
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg;
+  document.getElementById("toasts").appendChild(t);
+  setTimeout(()=>t.remove(), 4200);
+}
+function confetti(){
+  const colors = ["#e8a33d","#b06a2c","#d05c4b","#3d8b40","#4a6fa5","#8e5aa8"];
+  for(let i=0;i<70;i++){
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random()*100 + "vw";
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration = (1.6 + Math.random()*1.6) + "s";
+    c.style.animationDelay = (Math.random()*0.5) + "s";
+    c.style.borderRadius = Math.random() < .5 ? "50%" : "2px";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 4000);
+  }
+}
+function floatNum(text, x, y){
+  const layer = document.getElementById("floatLayer");
+  const el = document.createElement("div");
+  el.className = "float-num"; el.textContent = text;
+  const rect = layer.getBoundingClientRect();
+  el.style.left = (x - rect.left - 10 + (Math.random()*30-15)) + "px";
+  el.style.top  = (y - rect.top - 10) + "px";
+  layer.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+/* ================= CLICK ================= */
+function doClick(ev){
+  const gain = clickPower();
+  state.cookies += gain;
+  state.totalBaked += gain;
+  state.totalClicks++;
+  const x = (ev && ev.clientX) || window.innerWidth/2;
+  const y = (ev && ev.clientY) || window.innerHeight/2;
+  floatNum("+" + fmt(gain), x, y);
+  sndClick();
+  renderHeader();
+}
+document.getElementById("bigCookie").addEventListener("click", doClick);
+
+/* ================= SHOP ================= */
+const shopEls = {};
+function visibleBuildings(){
+  return BUILDINGS.filter(b => bCount(b.id) > 0 || state.totalBaked >= b.cost * 0.4);
+}
+function buildShop(){
+  const list = document.getElementById("shopList");
+  list.innerHTML = "";
+  const vis = visibleBuildings();
+  if(vis.length === 0){
+    list.innerHTML = '<p class="ms-note">Click the big cookie to earn your first cookies!</p>';
+    shopEls._sig = "";
+    return;
+  }
+  for(const b of vis){
+    const btn = document.createElement("button");
+    btn.className = "shop-item";
+    btn.innerHTML =
+      '<div class="emoji">' + b.emoji + '</div>' +
+      '<div class="info"><div class="name">' + b.name + '</div>' +
+      '<div class="cost"></div><div class="each"></div></div>' +
+      '<div class="owned"></div>';
+    btn.addEventListener("click", () => buyBuilding(b));
+    list.appendChild(btn);
+    shopEls[b.id] = btn;
+  }
+  shopEls._sig = vis.map(b=>b.id).join(",");
+  updateShop();
+}
+function buyBuilding(b){
+  const n = buyCount(b);
+  if(n < 1) return;
+  const cost = bulkCost(b, n);
+  if(state.cookies < cost) return;
+  state.cookies -= cost;
+  state.buildings[b.id] = bCount(b.id) + n;
+  sndBuy();
+  if(shopEls._sig !== visibleBuildings().map(x=>x.id).join(",")) buildShop();
+  else updateShop();
+  renderHeader();
+}
+function updateShop(){
+  for(const b of BUILDINGS){
+    const el = shopEls[b.id];
+    if(!el || !el.isConnected) continue;
+    const n = buyCount(b);
+    const cost = bulkCost(b, Math.max(1, n));
+    const afford = state.cookies >= cost && n >= 1;
+    el.classList.toggle("can-afford", afford);
+    el.disabled = !afford;
+    const label = buyAmount === "max" ? ("Max x" + Math.max(1,n)) : ("Buy x" + n);
+    el.querySelector(".cost").textContent = "🍪 " + fmt(cost) + "  (" + label + ")";
+    el.querySelector(".each").textContent = fmt(b.cps * bMult(b.id) * globalMult()) + "/s each";
+    el.querySelector(".owned").textContent = bCount(b.id);
+  }
+}
+document.querySelectorAll(".buy-btn").forEach(btn=>{
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".buy-btn").forEach(x=>x.classList.remove("active"));
+    btn.classList.add("active");
+    const a = btn.dataset.amt;
+    buyAmount = (a === "max") ? "max" : parseInt(a, 10);
+    updateShop();
+  });
+});
+
+/* ================= UPGRADES ================= */
+let upgSig = "";
+function visibleUpgrades(){
+  return UPGRADES.filter(u => !state.upgrades[u.id] && u.req(state));
+}
+function renderUpgrades(){
+  const vis = visibleUpgrades();
+  const sig = vis.map(u=>u.id).join(",") + "|" +
+            UPGRADES.filter(u=>state.upgrades[u.id]).map(u=>u.emoji).join(",");
+  if(sig === upgSig) return;
+  upgSig = sig;
+  const list = document.getElementById("upgList");
+  list.innerHTML = "";
+  if(vis.length === 0){
+    list.innerHTML = '<p class="ms-note">Keep baking and hiring to unlock upgrades…</p>';
+  }
+  for(const u of vis){
+    const btn = document.createElement("button");
+    btn.className = "upg";
+    btn.innerHTML = '<div class="emoji">' + u.emoji + '</div>' +
+      '<div class="info"><div class="name">' + u.name + '</div>' +
+      '<div class="desc">' + u.desc + '</div></div>' +
+      '<div class="cost">🍪 ' + fmt(u.cost) + '</div>';
+    btn.addEventListener("click", () => buyUpgrade(u));
+    list.appendChild(btn);
+  }
+  const owned = UPGRADES.filter(u=>state.upgrades[u.id]);
+  document.getElementById("ownedChips").innerHTML =
+    owned.map(u=>'<span title="'+u.name+'">'+u.emoji+'</span>').join("");
+  updateUpgradesAfford();
+}
+function updateUpgradesAfford(){
+  const vis = visibleUpgrades();
+  const btns = document.querySelectorAll("#upgList .upg");
+  btns.forEach((btn, i) => {
+    if(!vis[i]) return;
+    const afford = state.cookies >= vis[i].cost;
+    btn.classList.toggle("can-afford", afford);
+    btn.disabled = !afford;
+  });
+}
+function buyUpgrade(u){
+  if(state.cookies < u.cost || state.upgrades[u.id]) return;
+  state.cookies -= u.cost;
+  state.upgrades[u.id] = true;
+  sndUpgrade();
+  toast("⬆️ Upgrade: " + u.name + "!");
+  upgSig = "";
+  renderUpgrades();
+  updateShop();
+  renderHeader();
+}
+
+/* ================= MILESTONES ================= */
+let msSig = "";
+function renderMilestones(){
+  const sig = MILESTONES.map(m=>state.milestones[m.id]?1:0).join("");
+  if(sig === msSig) return;
+  msSig = sig;
+  const grid = document.getElementById("msGrid");
+  grid.innerHTML = "";
+  for(const m of MILESTONES){
+    const done = !!state.milestones[m.id];
+    const el = document.createElement("div");
+    el.className = "ms" + (done ? " done" : "");
+    el.innerHTML = '<div class="name">' + (done ? m.emoji : "🔒") + ' ' + m.name + '</div>' + m.desc;
+    grid.appendChild(el);
+  }
+  document.getElementById("msCount").textContent = doneMilestones() + " / " + MILESTONES.length;
+}
+function checkMilestones(){
+  for(const m of MILESTONES){
+    if(!state.milestones[m.id] && m.check(state)){
+      state.milestones[m.id] = true;
+      toast("🏆 Milestone: " + m.name + " (+2% production!)");
+      sndMilestone();
+      confetti();
+    }
+  }
+}
+
+/* ================= HEADER / STATS ================= */
+function renderHeader(){
+  document.getElementById("cookieCount").textContent = fmt(state.cookies);
+  document.getElementById("cpsLine").textContent = fmt(cps());
+  document.getElementById("clickPowerLine").textContent = fmt(clickPower());
+  document.getElementById("stTotal").textContent = fmt(state.totalBaked);
+  document.getElementById("stClicks").textContent = state.totalClicks.toLocaleString("en-US");
+  let workers = 0;
+  for(const b of BUILDINGS) workers += bCount(b.id);
+  document.getElementById("stWorkers").textContent = workers.toLocaleString("en-US");
+  document.getElementById("stBonus").textContent = "+" + (2 * doneMilestones()) + "%";
+}
+
+/* ================= SAVE / LOAD ================= */
+function save(){
+  state.lastSave = Date.now();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
+}
+function load(){
+  let raw = null;
+  try{ raw = localStorage.getItem(SAVE_KEY); }catch(e){}
+  if(!raw) return;
+  try{
+    const s = JSON.parse(raw);
+    state = Object.assign(defaultState(), s);
+    state.buildings = s.buildings || {};
+    state.upgrades = s.upgrades || {};
+    state.milestones = s.milestones || {};
+    // offline earnings: 50% rate, max 8h
+    const elapsed = Math.min(Math.max(0, (Date.now() - (s.lastSave || Date.now())) / 1000), 8*3600);
+    const earned = cps() * elapsed * 0.5;
+    if(earned >= 1){
+      state.cookies += earned;
+      state.totalBaked += earned;
+      document.getElementById("offlineAmount").textContent = "+" + fmt(earned) + " 🍪";
+      document.getElementById("offlineModal").classList.remove("oculto");
+    }
+  }catch(e){ state = defaultState(); }
+}
+document.getElementById("offlineOk").addEventListener("click",
+  ()=>document.getElementById("offlineModal").classList.add("oculto"));
+document.getElementById("saveBtn").addEventListener("click", ()=>{ save(); toast("💾 Game saved!"); });
+document.getElementById("resetBtn").addEventListener("click", ()=>{
+  if(confirm("Really burn down the whole empire and start over?")){
+    state = defaultState();
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    upgSig = ""; msSig = "";
+    buildShop(); renderUpgrades(); renderMilestones(); renderHeader();
+    toast("🗑 Fresh start. Bake responsibly!");
+  }
+});
+window.addEventListener("beforeunload", save);
+setInterval(save, 15000);
+
+/* ================= MAIN LOOP ================= */
+let lastShopSig = "";
+let lastVisibleUpgCount = -1;
+setInterval(() => {
+  const gain = cps() / 10;
+  if(gain > 0){ state.cookies += gain; state.totalBaked += gain; }
+  checkMilestones();
+  renderHeader();
+  const sig = visibleBuildings().map(b=>b.id).join(",");
+  if(sig !== lastShopSig){ lastShopSig = sig; buildShop(); } else { updateShop(); }
+  renderUpgrades();
+  updateUpgradesAfford();
+  renderMilestones();
+}, 100);
+
+/* ================= BOOT ================= */
+load();
+buildShop();
+lastShopSig = shopEls._sig || "";
+renderUpgrades();
+renderMilestones();
+renderHeader();
+</script>
+</body>
+</html>

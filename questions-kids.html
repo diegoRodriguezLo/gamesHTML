@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎈 ¡El Gran Juego de Preguntas! 🎈</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: "Comic Sans MS", "Chalkboard SE", "Segoe UI", sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #ffe259 0%, #ffa751 50%, #ff6b9d 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+
+  .tarjeta {
+    background: #fffdf5;
+    border-radius: 32px;
+    box-shadow: 0 16px 40px rgba(0,0,0,.25);
+    padding: 28px;
+    width: 100%;
+    max-width: 760px;
+    text-align: center;
+    border: 6px solid #ffb703;
+  }
+
+  h1 { font-size: clamp(1.6rem, 5vw, 2.6rem); color: #d62828; margin-bottom: 8px; }
+  h2 { font-size: clamp(1.2rem, 4vw, 1.8rem); color: #023047; margin-bottom: 14px; }
+  p  { font-size: 1.1rem; color: #333; }
+
+  .oculto { display: none !important; }
+
+  /* ---------- Pantalla de inicio ---------- */
+  .nombres { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 18px 0; }
+  .nombres input {
+    font-family: inherit;
+    font-size: 1.2rem;
+    padding: 12px 16px;
+    border-radius: 16px;
+    border: 3px solid #adb5bd;
+    text-align: center;
+    width: 220px;
+  }
+  .nombres input:focus { outline: none; border-color: #ffb703; }
+
+  .boton {
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: bold;
+    padding: 16px 36px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    background: #2a9d8f;
+    box-shadow: 0 6px 0 #1d7268;
+    transition: transform .1s;
+    margin-top: 10px;
+  }
+  .boton:active { transform: translateY(4px); box-shadow: 0 2px 0 #1d7268; }
+  .boton.grande { font-size: 1.7rem; padding: 20px 48px; }
+
+  /* ---------- Marcador ---------- */
+  .marcador {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .equipo {
+    flex: 1;
+    border-radius: 20px;
+    padding: 10px 8px;
+    color: #fff;
+    font-weight: bold;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .equipo .nombre { font-size: 1.1rem; overflow-wrap: anywhere; }
+  .equipo .puntos { font-size: 2rem; }
+  .equipo .globos { font-size: 1.4rem; }
+  .eqA { background: #e63946; }
+  .eqB { background: #457b9d; }
+  .equipo.activA { transform: scale(1.08); box-shadow: 0 0 0 5px #ffd60a, 0 0 25px #ffd60a; }
+  .equipo.activB { transform: scale(1.08); box-shadow: 0 0 0 5px #ffd60a, 0 0 25px #ffd60a; }
+
+  .turno {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #023047;
+    background: #ffd60a;
+    border-radius: 999px;
+    padding: 8px 18px;
+    display: inline-block;
+    margin-bottom: 14px;
+  }
+  .progreso { font-size: 1rem; color: #555; margin-bottom: 14px; }
+
+  /* ---------- Pregunta ---------- */
+  .pregunta {
+    font-size: clamp(1.4rem, 4.5vw, 2rem);
+    color: #023047;
+    background: #e0f7fa;
+    border: 4px dashed #4dd0e1;
+    border-radius: 24px;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .opciones {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .opcion {
+    font-family: inherit;
+    font-size: 1.35rem;
+    font-weight: bold;
+    padding: 20px 14px;
+    border-radius: 22px;
+    border: 4px solid #bde0fe;
+    background: #fff;
+    color: #023047;
+    cursor: pointer;
+    transition: transform .12s, background .2s;
+    min-height: 84px;
+  }
+  .opcion:hover:not(:disabled) { transform: scale(1.05); background: #fff3b0; }
+  .opcion:disabled { cursor: default; opacity: .95; }
+  .opcion.ok     { background: #95d5b2; border-color: #2d6a4f; animation: saltar .5s; }
+  .opcion.malo   { background: #ffb3c1; border-color: #d62828; animation: temblar .4s; }
+  .opcion.tachada{ opacity: .45; text-decoration: line-through; }
+  .opcion .emoji { font-size: 2rem; display: block; margin-bottom: 4px; }
+
+  @keyframes saltar { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-14px) scale(1.06)} }
+  @keyframes temblar { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+
+  .mensaje {
+    min-height: 64px;
+    margin-top: 18px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .mensaje .puntos-ganados { font-size: 1.1rem; color: #2a9d8f; }
+
+  /* ---------- Pantalla final ---------- */
+  .final-puntos { font-size: 1.6rem; margin: 10px 0; color: #023047; font-weight: bold; }
+  .campeon { font-size: 3rem; margin: 10px 0; }
+
+  /* ---------- Confeti ---------- */
+  .confeti {
+    position: fixed;
+    top: -20px;
+    font-size: 1.6rem;
+    pointer-events: none;
+    z-index: 999;
+    animation: caer linear forwards;
+  }
+  @keyframes caer {
+    to { transform: translateY(110vh) rotate(720deg); opacity: .8; }
+  }
+</style>
+</head>
+<body>
+
+<div class="tarjeta">
+
+  <!-- ============ PANTALLA DE INICIO ============ -->
+  <div id="pantallaInicio">
+    <h1>🎈 ¡El Gran Juego de Preguntas! 🎈</h1>
+    <p>2 equipos · 20 preguntas cada uno</p>
+    <p>🎲 Cada partida elige 40 al azar, sin repetir, de un listado de 340 preguntas</p>
+    <p>✅ Aciertas a la primera → <b>100 puntos</b></p>
+    <p>🔄 Fallas → ¡segunda oportunidad! → <b>50 puntos</b></p>
+    <p>❌ Fallas las dos → siguiente pregunta</p>
+    <div class="nombres">
+      <input id="nombreA" maxlength="14" placeholder="Equipo 1" value="Equipo Rojo 🔴">
+      <input id="nombreB" maxlength="14" placeholder="Equipo 2" value="Equipo Azul 🔵">
+    </div>
+    <button class="boton grande" onclick="empezarJuego()">🚀 ¡JUGAR!</button>
+  </div>
+
+  <!-- ============ PANTALLA DE JUEGO ============ -->
+  <div id="pantallaJuego" class="oculto">
+    <div class="marcador">
+      <div class="equipo eqA" id="cajaA">
+        <div class="nombre" id="etiquetaA"></div>
+        <div class="puntos" id="puntosA">0</div>
+        <div class="globos" id="globosA"></div>
+      </div>
+      <div class="equipo eqB" id="cajaB">
+        <div class="nombre" id="etiquetaB"></div>
+        <div class="puntos" id="puntosB">0</div>
+        <div class="globos" id="globosB"></div>
+      </div>
+    </div>
+
+    <div class="turno" id="turno"></div>
+    <div class="progreso" id="progreso"></div>
+    <div class="pregunta" id="pregunta"></div>
+    <div class="opciones" id="opciones"></div>
+    <div class="mensaje" id="mensaje"></div>
+  </div>
+
+  <!-- ============ PANTALLA FINAL ============ -->
+  <div id="pantallaFinal" class="oculto">
+    <h1>🏆 ¡Fin del juego! 🏆</h1>
+    <div class="campeon" id="campeonEmoji"></div>
+    <h2 id="campeonTexto"></h2>
+    <div class="final-puntos" id="finalA"></div>
+    <div class="final-puntos" id="finalB"></div>
+    <button class="boton grande" onclick="location.reload()">🔁 Jugar otra vez</button>
+  </div>
+
+</div>
+
+<script>
+// ==================== PREGUNTAS ====================
+// Banco de 340 preguntas (muy fáciles, para niños de 3 años).
+// En cada partida se eligen 40 al azar sin repetir: 20 para cada equipo.
+const bancoPreguntas = [
+  { q: "¿De qué color es el sol? ☀️", r: ["Amarillo 🟡", "Azul 🔵", "Verde 🟢", "Morado 🟣"], c: 0 },
+  { q: "¿De qué color es el cielo? 🌤️", r: ["Azul 🔵", "Rojo 🔴", "Verde 🟢", "Marrón 🟤"], c: 0 },
+  { q: "¿De qué color es la hierba? 🌱", r: ["Verde 🟢", "Rosa 🌸", "Azul 🔵", "Amarillo 🟡"], c: 0 },
+  { q: "¿De qué color es la nieve? ❄️", r: ["Blanco ⚪", "Negro ⚫", "Verde 🟢", "Rojo 🔴"], c: 0 },
+  { q: "¿De qué color es el carbón? ⚫", r: ["Negro ⚫", "Blanco ⚪", "Rosa 🌸", "Amarillo 🟡"], c: 0 },
+  { q: "¿De qué color es la fresa? 🍓", r: ["Rojo 🔴", "Azul 🔵", "Verde 🟢", "Gris"], c: 0 },
+  { q: "¿De qué color son las bananas? 🍌", r: ["Amarillo 🟡", "Morado 🟣", "Rosa 🌸", "Azul 🔵"], c: 0 },
+  { q: "¿De qué color es una naranja? 🍊", r: ["Naranja 🟠", "Verde 🟢", "Azul 🔵", "Morado 🟣"], c: 0 },
+  { q: "¿De qué color es un huevo? 🥚", r: ["Blanco ⚪", "Negro ⚫", "Azul 🔵", "Verde 🟢"], c: 0 },
+  { q: "¿De qué color es el chocolate? 🍫", r: ["Marrón 🟤", "Rosa 🌸", "Verde 🟢", "Azul 🔵"], c: 0 },
+  { q: "¿De qué color son las uvas? 🍇", r: ["Moradas 🟣", "Amarillas 🟡", "Rosas 🌸", "Azules 🔵"], c: 0 },
+  { q: "¿De qué color son las hojas de los árboles? 🍃", r: ["Verde 🟢", "Morado 🟣", "Rosa 🌸", "Azul 🔵"], c: 0 },
+  { q: "¿De qué color es el camión de bomberos? 🚒", r: ["Rojo 🔴", "Verde 🟢", "Azul 🔵", "Amarillo 🟡"], c: 0 },
+  { q: "¿De qué color son las nubes? ☁️", r: ["Blanco ⚪", "Negro ⚫", "Rosa 🌸", "Verde 🟢"], c: 0 },
+  { q: "¿De qué color es la noche? 🌙", r: ["Negra ⚫", "Blanca ⚪", "Amarilla 🟡", "Verde 🟢"], c: 0 },
+  { q: "¿De qué color es la yema del huevo? 🍳", r: ["Amarilla 🟡", "Azul 🔵", "Rosa 🌸", "Verde 🟢"], c: 0 },
+  { q: "¿De qué color es la zanahoria? 🥕", r: ["Naranja 🟠", "Azul 🔵", "Morada 🟣", "Blanca ⚪"], c: 0 },
+  { q: "¿De qué color son las cerezas? 🍒", r: ["Rojas 🔴", "Verdes 🟢", "Azules 🔵", "Amarillas 🟡"], c: 0 },
+  { q: "¿De qué color es el limón? 🍋", r: ["Amarillo 🟡", "Morado 🟣", "Rosa 🌸", "Azul 🔵"], c: 0 },
+  { q: "¿De qué color es el mar? 🌊", r: ["Azul 🔵", "Rojo 🔴", "Amarillo 🟡", "Marrón 🟤"], c: 0 },
+  { q: "¿De qué color es el fuego? 🔥", r: ["Rojo 🔴", "Azul 🔵", "Verde 🟢", "Blanco ⚪"], c: 0 },
+  { q: "¿De qué color es el tronco de un árbol? 🌳", r: ["Marrón 🟤", "Rosa 🌸", "Azul 🔵", "Verde 🟢"], c: 0 },
+  { q: "¿De qué color es la rana? 🐸", r: ["Verde 🟢", "Morada 🟣", "Rosa 🌸", "Azul 🔵"], c: 0 },
+  { q: "¿De qué color es la rosa de siempre? 🌹", r: ["Roja 🔴", "Azul 🔵", "Verde 🟢", "Gris"], c: 0 },
+  { q: "¿De qué color es el girasol? 🌻", r: ["Amarillo 🟡", "Morado 🟣", "Azul 🔵", "Rosa 🌸"], c: 0 },
+  { q: "¿De qué color es el algodón? ☁️", r: ["Blanco ⚪", "Negro ⚫", "Verde 🟢", "Rojo 🔴"], c: 0 },
+  { q: "¿De qué color son los arándanos? 🫐", r: ["Azules 🔵", "Rojos 🔴", "Amarillos 🟡", "Verdes 🟢"], c: 0 },
+  { q: "¿De qué color es el kiwi por dentro? 🥝", r: ["Verde 🟢", "Morado 🟣", "Rosa 🌸", "Azul 🔵"], c: 0 },
+  { q: "¿De qué color es la calabaza? 🎃", r: ["Naranja 🟠", "Azul 🔵", "Morada 🟣", "Blanca ⚪"], c: 0 },
+  { q: "¿De qué color es la leche? 🥛", r: ["Blanca ⚪", "Marrón 🟤", "Verde 🟢", "Azul 🔵"], c: 0 },
+  { q: "¿Qué dice la vaca? 🐄", r: ["Muuu 🐄", "Guau guau 🐶", "Miau 🐱", "Cuac cuac 🦆"], c: 0 },
+  { q: "¿Qué animal dice 'guau guau'? 🐶", r: ["El perro 🐶", "El gato 🐱", "La vaca 🐄", "El pato 🦆"], c: 0 },
+  { q: "¿Qué animal hace 'miau'? 🐱", r: ["El gato 🐱", "La rana 🐸", "La oveja 🐑", "El mono 🐵"], c: 0 },
+  { q: "¿Qué animal dice 'cuac cuac'? 🦆", r: ["El pato 🦆", "El perro 🐶", "El cerdo 🐷", "El pollo 🐔"], c: 0 },
+  { q: "¿Qué animal dice 'oink oink'? 🐷", r: ["El cerdito 🐷", "La vaca 🐄", "El caballo 🐴", "El pez 🐟"], c: 0 },
+  { q: "¿Qué dice el gallo por la mañana? 🐓", r: ["Kikirikí 🐓", "Muuu 🐄", "Miau 🐱", "Guau guau 🐶"], c: 0 },
+  { q: "¿Qué dice la ovejita? 🐑", r: ["Beee 🐑", "Cuac cuac 🦆", "Guau guau 🐶", "Muuu 🐄"], c: 0 },
+  { q: "¿Qué dice la rana? 🐸", r: ["Croac croac 🐸", "Muuu 🐄", "Miau 🐱", "Oink oink 🐷"], c: 0 },
+  { q: "¿Qué bichito hace 'bzzz' y hace miel? 🐝", r: ["La abeja 🐝", "La mariposa 🦋", "La hormiga 🐜", "El caracol 🐌"], c: 0 },
+  { q: "¿Qué hace el caballo? 🐴", r: ["Iiih, relincha 🐴", "Muuu 🐄", "Cuac cuac 🦆", "Miau 🐱"], c: 0 },
+  { q: "¿Qué hace la paloma? 🕊️", r: ["Coo, coo 🕊️", "Guau guau 🐶", "Muuu 🐄", "Croac 🐸"], c: 0 },
+  { q: "¿Qué hace el pavo? 🦃", r: ["Glu glu 🦃", "Miau 🐱", "Muuu 🐄", "Guau guau 🐶"], c: 0 },
+  { q: "¿Qué hace el ratoncito? 🐭", r: ["Pii pii 🐭", "Muuu 🐄", "Guau guau 🐶", "Cuac cuac 🦆"], c: 0 },
+  { q: "¿Qué hace el lobo por la noche? 🐺", r: ["Auuuu 🐺", "Miau 🐱", "Cuac cuac 🦆", "Oink oink 🐷"], c: 0 },
+  { q: "¿Qué hace el león? 🦁", r: ["Ruge muy fuerte 🦁", "Muuu 🐄", "Miau 🐱", "Cuac cuac 🦆"], c: 0 },
+  { q: "¿Dónde vive el pececito? 🐟", r: ["En el agua 💧", "En el árbol 🌳", "En la cama 🛏️", "En la nube ☁️"], c: 0 },
+  { q: "¿Dónde vive el pajarito? 🐦", r: ["En el nido 🪺", "En el mar 🌊", "En la cama 🛏️", "En el coche 🚗"], c: 0 },
+  { q: "¿Dónde duerme el perrito? 🐶", r: ["En su caseta 🐕", "En el agua 💧", "En el nido 🪺", "En la nevera"], c: 0 },
+  { q: "¿Dónde vive el conejito? 🐰", r: ["En la madriguera 🐇", "En el mar 🌊", "En la cama 🛏️", "En el tejado"], c: 0 },
+  { q: "¿Dónde vive el osito? 🐻", r: ["En la cueva 🐻", "En el mar 🌊", "En el nido 🪺", "En la ciudad"], c: 0 },
+  { q: "¿Dónde viven los monos? 🐵", r: ["En la selva 🌴", "En el polo ❄️", "En la granja 🚜", "En el desierto 🏜️"], c: 0 },
+  { q: "¿Dónde vive el oso polar? 🐻‍❄️", r: ["En el hielo ❄️", "En la selva 🌴", "En la granja 🚜", "En el volcán 🌋"], c: 0 },
+  { q: "¿Dónde vive el camello? 🐫", r: ["En el desierto 🏜️", "En el mar 🌊", "En el polo ❄️", "En el bosque 🌲"], c: 0 },
+  { q: "¿Dónde está la vaca? 🐄", r: ["En la granja 🚜", "En el mar 🌊", "En la luna 🌙", "En la ciudad"], c: 0 },
+  { q: "¿Dónde vive la araña? 🕷️", r: ["En su telaraña 🕸️", "En el agua 💧", "En la cama 🛏️", "En el nido 🪺"], c: 0 },
+  { q: "¿Qué lleva el caracol a la espalda? 🐌", r: ["Su casita 🐌", "Un sombrero 🎩", "Una mochila 🎒", "Un globo 🎈"], c: 0 },
+  { q: "¿Dónde viven los pingüinos? 🐧", r: ["En el hielo ❄️", "En la selva 🌴", "En el desierto 🏜️", "En la granja 🚜"], c: 0 },
+  { q: "¿Dónde vive la rana? 🐸", r: ["En el estanque 💧", "En el desierto 🏜️", "En la montaña ⛰️", "En el tejado"], c: 0 },
+  { q: "¿Dónde vive la ardilla? 🐿️", r: ["En el árbol 🌳", "En el mar 🌊", "En la cama 🛏️", "En la nevera"], c: 0 },
+  { q: "¿Dónde vive el gato? 🐱", r: ["En casita 🏠", "En el mar 🌊", "En el nido 🪺", "En la selva 🌴"], c: 0 },
+  { q: "¿Cuántas patas tiene un perro? 🐕", r: ["4", "2", "6", "8"], c: 0 },
+  { q: "¿Cuántas patas tiene una araña? 🕷️", r: ["8", "4", "6", "2"], c: 0 },
+  { q: "¿Cuántas patas tiene una gallina? 🐔", r: ["2", "4", "6", "8"], c: 0 },
+  { q: "¿Qué animal puede volar? 🕊️", r: ["El pájaro 🐦", "El pez 🐟", "El elefante 🐘", "La tortuga 🐢"], c: 0 },
+  { q: "¿Qué animal nada en el agua? 🐟", r: ["El pez 🐟", "El perro 🐶", "El gato 🐱", "La vaca 🐄"], c: 0 },
+  { q: "¿Qué animal es grande, gris y tiene trompa? 🐘", r: ["El elefante 🐘", "El gato 🐱", "El pato 🦆", "El ratón 🐭"], c: 0 },
+  { q: "¿Quién tiene el cuello muy largo? 🦒", r: ["La jirafa 🦒", "El perro 🐶", "La rana 🐸", "El cerdo 🐷"], c: 0 },
+  { q: "¿Quién es el rey de la selva? 👑", r: ["El león 🦁", "El ratón 🐭", "El pollo 🐔", "El sapo 🐸"], c: 0 },
+  { q: "¿Qué animal pone huevos? 🥚", r: ["La gallina 🐔", "El perro 🐶", "El caballo 🐴", "El gato 🐱"], c: 0 },
+  { q: "¿Qué animal nos da leche? 🐄", r: ["La vaca 🐄", "El pez 🐟", "El león 🦁", "El mono 🐵"], c: 0 },
+  { q: "¿Qué animal es muy lento? 🐢", r: ["La tortuga 🐢", "El caballo 🐴", "El perro 🐶", "El león 🦁"], c: 0 },
+  { q: "¿Qué animal es verde y salta? 🐸", r: ["La rana 🐸", "La vaca 🐄", "El pez 🐟", "La oveja 🐑"], c: 0 },
+  { q: "¿Qué animal tiene rayas blancas y negras? 🦓", r: ["La cebra 🦓", "El perro 🐶", "La vaca 🐄", "El pato 🦆"], c: 0 },
+  { q: "¿Quién tiene una melena bonita? 🦁", r: ["El león 🦁", "El gato 🐱", "El pato 🦆", "El cerdo 🐷"], c: 0 },
+  { q: "¿Qué animal tiene alas de colores? 🦋", r: ["La mariposa 🦋", "El pez 🐟", "La tortuga 🐢", "El erizo 🦔"], c: 0 },
+  { q: "¿Qué animal tiene púas? 🦔", r: ["El erizo 🦔", "El pez 🐟", "El perro 🐶", "El pato 🦆"], c: 0 },
+  { q: "¿Qué animal tiene ocho brazos? 🐙", r: ["El pulpo 🐙", "El gato 🐱", "El león 🦁", "La vaca 🐄"], c: 0 },
+  { q: "¿Qué animal no tiene patas y gatea? 🐍", r: ["La serpiente 🐍", "El perro 🐶", "La rana 🐸", "El pato 🦆"], c: 0 },
+  { q: "¿Qué animal repite lo que dices? 🦜", r: ["El loro 🦜", "El pez 🐟", "La vaca 🐄", "El erizo 🦔"], c: 0 },
+  { q: "¿Qué animal hace telarañas? 🕷️", r: ["La araña 🕷️", "El pez 🐟", "El perro 🐶", "La gallina 🐔"], c: 0 },
+  { q: "¿Qué fruta es roja y redonda? 🔴", r: ["Manzana 🍎", "Plátano 🍌", "Uva 🍇", "Naranja 🍊"], c: 0 },
+  { q: "¿Qué fruta es amarilla y alargada? 🍌", r: ["El plátano 🍌", "La sandía 🍉", "La cereza 🍒", "La fresa 🍓"], c: 0 },
+  { q: "¿Qué fruta es grande, verde y roja por dentro? 🍉", r: ["La sandía 🍉", "La manzana 🍎", "El limón 🍋", "La pera 🍐"], c: 0 },
+  { q: "¿Qué fruta es pequeña y roja? 🍓", r: ["La fresa 🍓", "La sandía 🍉", "El plátano 🍌", "La piña 🍍"], c: 0 },
+  { q: "¿Qué fruta es pequeña y morada, en racimo? 🍇", r: ["La uva 🍇", "La manzana 🍎", "El plátano 🍌", "La pera 🍐"], c: 0 },
+  { q: "¿Qué fruta es redonda y naranja? 🍊", r: ["La naranja 🍊", "La uva 🍇", "La fresa 🍓", "La pera 🍐"], c: 0 },
+  { q: "¿Qué fruta es amarilla y ácida? 🍋", r: ["El limón 🍋", "La fresa 🍓", "La cereza 🍒", "La sandía 🍉"], c: 0 },
+  { q: "¿Qué fruta es peluda y dulce? 🍑", r: ["El melocotón 🍑", "La manzana 🍎", "El kiwi 🥝", "La uva 🍇"], c: 0 },
+  { q: "¿Qué fruta es pequeña y azul? 🫐", r: ["El arándano 🫐", "La naranja 🍊", "El plátano 🍌", "La piña 🍍"], c: 0 },
+  { q: "¿Qué fruta tiene una corona? 🍍", r: ["La piña 🍍", "La manzana 🍎", "La pera 🍐", "El limón 🍋"], c: 0 },
+  { q: "¿Qué fruta es roja con rabito? 🍒", r: ["La cereza 🍒", "El plátano 🍌", "La sandía 🍉", "El kiwi 🥝"], c: 0 },
+  { q: "¿De qué fruta hacemos zumo naranja? 🧃", r: ["La naranja 🍊", "La fresa 🍓", "La pera 🍐", "El kiwi 🥝"], c: 0 },
+  { q: "¿Qué fruta es dulce y amarilla, de país caluroso? 🥭", r: ["El mango 🥭", "La manzana 🍎", "La uva 🍇", "La pera 🍐"], c: 0 },
+  { q: "¿Qué fruta tiene una semilla grande dentro? 🍑", r: ["El melocotón 🍑", "La uva 🍇", "La cereza 🍒", "El plátano 🍌"], c: 0 },
+  { q: "¿Qué fruta crece en una palmera? 🥥", r: ["El coco 🥥", "La manzana 🍎", "La fresa 🍓", "La pera 🍐"], c: 0 },
+  { q: "¿Cuál de estas NO es una fruta? 🤔", r: ["La zanahoria 🥕", "La manzana 🍎", "El plátano 🍌", "La uva 🍇"], c: 0 },
+  { q: "¿Qué fruta es verde y ácida? 🍏", r: ["La manzana verde 🍏", "La fresa 🍓", "La cereza 🍒", "La naranja 🍊"], c: 0 },
+  { q: "¿Qué fruta es marrón por fuera y verde por dentro? 🥝", r: ["El kiwi 🥝", "El plátano 🍌", "La naranja 🍊", "La piña 🍍"], c: 0 },
+  { q: "¿Qué fruta es roja y con forma de corazón? 🍓", r: ["La fresa 🍓", "El plátano 🍌", "La piña 🍍", "El limón 🍋"], c: 0 },
+  { q: "¿Qué fruta es grande y amarilla, de piel rugosa? 🍈", r: ["El melón 🍈", "La cereza 🍒", "La fresa 🍓", "La uva 🍇"], c: 0 },
+  { q: "¿Qué fruta comes en racimo? 🍇", r: ["Las uvas 🍇", "La manzana 🍎", "La sandía 🍉", "La pera 🍐"], c: 0 },
+  { q: "¿Qué fruta es roja y brilla, con hojitas? 🍎", r: ["La manzana 🍎", "El plátano 🍌", "El kiwi 🥝", "La naranja 🍊"], c: 0 },
+  { q: "¿Qué fruta es la favorita de los monos? 🐵", r: ["El plátano 🍌", "La fresa 🍓", "La pera 🍐", "El limón 🍋"], c: 0 },
+  { q: "¿Qué fruta es pequeña y anaranjada? 🍊", r: ["El albaricoque", "La sandía 🍉", "El plátano 🍌", "La pera 🍐"], c: 0 },
+  { q: "¿De qué fruta se hace la salsa roja de la pasta? 🍝", r: ["El tomate 🍅", "La manzana 🍎", "El plátano 🍌", "La pera 🍐"], c: 0 },
+  { q: "¿Qué verdura es naranja y buena para la vista? 🥕", r: ["La zanahoria 🥕", "La lechuga 🥬", "El brócoli 🥦", "El pepino 🥒"], c: 0 },
+  { q: "¿Qué verdura es grande y te hace llorar al cortarla? 🧅", r: ["La cebolla 🧅", "El pepino 🥒", "La patata 🥔", "El guisante"], c: 0 },
+  { q: "¿Qué es redondo y rojo, para ensalada? 🍅", r: ["El tomate 🍅", "La zanahoria 🥕", "La patata 🥔", "La lechuga 🥬"], c: 0 },
+  { q: "¿Qué verdura parece un arbolito verde? 🥦", r: ["El brócoli 🥦", "La cebolla 🧅", "El pepino 🥒", "La patata 🥔"], c: 0 },
+  { q: "¿Qué verdura es larga y verde, para ensalada? 🥒", r: ["El pepino 🥒", "La zanahoria 🥕", "La patata 🥔", "El maíz 🌽"], c: 0 },
+  { q: "¿Qué verdura es morada y brillante? 🍆", r: ["La berenjena 🍆", "La lechuga 🥬", "El pepino 🥒", "El tomate 🍅"], c: 0 },
+  { q: "¿Con qué patata hacemos patatas fritas? 🍟", r: ["La patata 🥔", "La zanahoria 🥕", "El brócoli 🥦", "La cebolla 🧅"], c: 0 },
+  { q: "¿Qué verdura es de hojas verdes para ensalada? 🥬", r: ["La lechuga 🥬", "La zanahoria 🥕", "La patata 🥔", "El tomate 🍅"], c: 0 },
+  { q: "¿Qué verdura es redonda y grande, para Halloween? 🎃", r: ["La calabaza 🎃", "La lechuga 🥬", "El pepino 🥒", "La cebolla 🧅"], c: 0 },
+  { q: "¿Qué comemos en una mazorca? 🌽", r: ["El maíz 🌽", "La zanahoria 🥕", "El tomate 🍅", "La patata 🥔"], c: 0 },
+  { q: "¿Qué verdura es pequeña, redonda y verde, en vaina?", r: ["El guisante", "La cebolla 🧅", "El pepino 🥒", "La patata 🥔"], c: 0 },
+  { q: "¿Qué verdura es blanca y pica en el ojo? 🧅", r: ["La cebolla 🧅", "La lechuga 🥬", "El brócoli 🥦", "La pera 🍐"], c: 0 },
+  { q: "¿Qué verdura es roja y alargada, dulce? 🫑", r: ["El pimiento 🫑", "La patata 🥔", "La zanahoria 🥕", "El brócoli 🥦"], c: 0 },
+  { q: "¿Qué verdura crece debajo de la tierra? 🥕", r: ["La zanahoria 🥕", "La lechuga 🥬", "El pepino 🥒", "El tomate 🍅"], c: 0 },
+  { q: "¿De qué verdura hacemos gazpacho rojo? 🥣", r: ["El tomate 🍅", "La patata 🥔", "La zanahoria 🥕", "La lechuga 🥬"], c: 0 },
+  { q: "¿Con qué parte del cuerpo VEMOS? 👀", r: ["Los ojos 👀", "La nariz 👃", "Las orejas 👂", "Las manos ✋"], c: 0 },
+  { q: "¿Con qué parte del cuerpo OÍMOS? 👂", r: ["Las orejas 👂", "Los ojos 👀", "La boca 👄", "Las rodillas 🦵"], c: 0 },
+  { q: "¿Con qué parte del cuerpo OLEMOS? 👃", r: ["La nariz 👃", "Los ojos 👀", "Los pies 🦶", "Las manos ✋"], c: 0 },
+  { q: "¿Con qué probamos si algo es dulce? 👅", r: ["La lengua 👅", "La oreja 👂", "El codo", "La rodilla 🦵"], c: 0 },
+  { q: "¿Con qué acariciamos? ✋", r: ["Las manos ✋", "Los pies 🦶", "La nariz 👃", "Las orejas 👂"], c: 0 },
+  { q: "¿Con qué caminamos? 🚶", r: ["Las piernas 🦵", "Las manos ✋", "La nariz 👃", "Las orejas 👂"], c: 0 },
+  { q: "¿Con qué pateamos una pelota? ⚽", r: ["El pie 🦶", "La mano ✋", "La oreja 👂", "La nariz 👃"], c: 0 },
+  { q: "¿Con qué aplaudimos? 👏", r: ["Las manos 👏", "Los pies 🦶", "Las rodillas 🦵", "Los codos"], c: 0 },
+  { q: "¿Con qué señalamos? ☝️", r: ["El dedo ☝️", "El pie 🦶", "La oreja 👂", "El codo"], c: 0 },
+  { q: "¿Con qué masticamos la comida? 🦷", r: ["Los dientes 🦷", "La nariz 👃", "Las orejas 👂", "Los codos"], c: 0 },
+  { q: "¿Cuántos ojos tenemos? 👀", r: ["2", "1", "3", "4"], c: 0 },
+  { q: "¿Cuántas orejas tenemos? 👂", r: ["2", "1", "3", "4"], c: 0 },
+  { q: "¿Cuántas manos tenemos? ✋", r: ["2", "1", "3", "4"], c: 0 },
+  { q: "¿Cuántos dedos hay en una mano? ✋", r: ["5", "3", "4", "10"], c: 0 },
+  { q: "¿Cuántas piernas tenemos? 🦵", r: ["2", "1", "3", "4"], c: 0 },
+  { q: "¿Qué tenemos en el medio de la cara? 👃", r: ["La nariz 👃", "El codo", "La rodilla 🦵", "El dedo gordo"], c: 0 },
+  { q: "¿Por dónde entra la comida? 👄", r: ["La boca 👄", "La oreja 👂", "La nariz 👃", "El codo"], c: 0 },
+  { q: "¿Qué tenemos en la cabeza? 💇", r: ["El pelo 💇", "Los dedos ☝️", "Los pies 🦶", "Las rodillas 🦵"], c: 0 },
+  { q: "¿Cuántos dedos hay en dos manos? 🙌", r: ["10", "5", "8", "20"], c: 0 },
+  { q: "¿Con qué besamos? 😘", r: ["La boca 👄", "La nariz 👃", "La oreja 👂", "El codo"], c: 0 },
+  { q: "¿Cuántas ruedas tiene una bici? 🚲", r: ["2", "1", "3", "4"], c: 0 },
+  { q: "¿Cuántas ruedas tiene un coche? 🚗", r: ["4", "2", "3", "6"], c: 0 },
+  { q: "¿Cuántas ruedas tiene un triciclo? 🛴", r: ["3", "1", "2", "4"], c: 0 },
+  { q: "¿Qué número va después del 1? 🔢", r: ["2", "4", "5", "0"], c: 0 },
+  { q: "¿Qué número va antes del 5? 🔢", r: ["4", "2", "1", "3"], c: 0 },
+  { q: "¿Cuánto es 1 + 1? ➕", r: ["2", "3", "4", "1"], c: 0 },
+  { q: "¿Cuánto es 2 + 2? ➕", r: ["4", "3", "5", "2"], c: 0 },
+  { q: "¿Cuánto es 3 + 1? ➕", r: ["4", "2", "5", "6"], c: 0 },
+  { q: "¿Cuánto es 5 - 1? ➖", r: ["4", "2", "3", "5"], c: 0 },
+  { q: "¿Cuántas patas tiene una mesa? 🪑", r: ["4", "2", "3", "6"], c: 0 },
+  { q: "¿Cuántas estaciones tiene el año? 🍂", r: ["4", "2", "6", "12"], c: 0 },
+  { q: "¿Qué número va después del 2? 🔢", r: ["3", "1", "5", "0"], c: 0 },
+  { q: "¿Qué número va antes del 3? 🔢", r: ["2", "4", "1", "5"], c: 0 },
+  { q: "¿Cuánto es 2 + 1? ➕", r: ["3", "4", "2", "5"], c: 0 },
+  { q: "¿Cuánto es 4 - 2? ➖", r: ["2", "3", "1", "4"], c: 0 },
+  { q: "¿Cuántos colores tiene el arcoíris? 🌈", r: ["7", "3", "5", "10"], c: 0 },
+  { q: "¿Cuántas ruedas tiene una moto? 🏍️", r: ["2", "1", "3", "4"], c: 0 },
+  { q: "¿Cuántos días tiene la semana? 📅", r: ["7", "5", "10", "4"], c: 0 },
+  { q: "¿Cuántos meses tiene el año? 📆", r: ["12", "7", "10", "24"], c: 0 },
+  { q: "¿Cuántas manos necesitas para aplaudir? 👏", r: ["2", "1", "3", "4"], c: 0 },
+  { q: "¿Qué tiene alas y vuela por el cielo? ✈️", r: ["El avión ✈️", "El coche 🚗", "El barco 🚢", "La bici 🚲"], c: 0 },
+  { q: "¿Qué va por las vías? 🚂", r: ["El tren 🚂", "El avión ✈️", "El barco 🚢", "La moto 🏍️"], c: 0 },
+  { q: "¿Qué flota en el agua? 🚢", r: ["El barco 🚢", "El coche 🚗", "El tren 🚂", "La bici 🚲"], c: 0 },
+  { q: "¿En qué pedaleas con dos ruedas? 🚲", r: ["La bici 🚲", "El autobús 🚌", "El avión ✈️", "El barco 🚢"], c: 0 },
+  { q: "¿Qué apaga fuegos con manguera? 🚒", r: ["El camión de bomberos 🚒", "El taxi 🚕", "El tren 🚂", "La bici 🚲"], c: 0 },
+  { q: "¿Qué te lleva al hospital rápido? 🚑", r: ["La ambulancia 🚑", "El taxi 🚕", "El autobús 🚌", "El avión ✈️"], c: 0 },
+  { q: "¿Qué persigue a los malos con sirena? 🚓", r: ["El coche de policía 🚓", "El taxi 🚕", "El camión 🚚", "El barco 🚢"], c: 0 },
+  { q: "¿Qué camión lleva cajas muy grandes? 🚚", r: ["El camión 🚚", "La bici 🚲", "El avión ✈️", "La moto 🏍️"], c: 0 },
+  { q: "¿Qué usa el granjero en el campo? 🚜", r: ["El tractor 🚜", "El avión ✈️", "El barco 🚢", "El metro"], c: 0 },
+  { q: "¿Dónde despega el avión? 🛫", r: ["En el aeropuerto ✈️", "En el puerto ⚓", "En la estación 🚂", "En la tienda"], c: 0 },
+  { q: "¿Dónde amarra el barco? ⚓", r: ["En el puerto 🚢", "En el aeropuerto ✈️", "En el garaje", "En la cima"], c: 0 },
+  { q: "¿Qué cohete va a la luna? 🚀", r: ["El cohete 🚀", "El barco 🚢", "El tren 🚂", "El taxi 🚕"], c: 0 },
+  { q: "¿En qué te impulsas con un pie? 🛴", r: ["El patinete 🛴", "El coche 🚗", "El avión ✈️", "El tren 🚂"], c: 0 },
+  { q: "¿Qué lleva muchas personas por la ciudad? 🚌", r: ["El autobús 🚌", "La bici 🚲", "La moto 🏍️", "El avión ✈️"], c: 0 },
+  { q: "¿En qué dices 'al aeropuerto, por favor'? 🚕", r: ["El taxi 🚕", "El tractor 🚜", "El barco 🚢", "El tren 🚂"], c: 0 },
+  { q: "¿Con qué conduces un coche? 🚗", r: ["El volante 🚗", "El timón", "Los pedales", "La escalera"], c: 0 },
+  { q: "¿Qué cruza la ciudad por debajo de la calle? 🚇", r: ["El metro 🚇", "El barco 🚢", "El avión ✈️", "El tractor 🚜"], c: 0 },
+  { q: "¿En qué cabes tú y tu familia, con cuatro ruedas? 🚗", r: ["El coche 🚗", "El avión ✈️", "El barco 🚢", "El tren 🚂"], c: 0 },
+  { q: "¿Qué rueda sin motor, cuesta abajo, en la rampa? 🛹", r: ["El monopatín 🛹", "El avión ✈️", "El barco 🚢", "El autobús 🚌"], c: 0 },
+  { q: "¿Qué lleva cartas y paquetes? 📦", r: ["El camión del cartero 📬", "El avión ✈️", "El barco 🚢", "La bici 🚲"], c: 0 },
+  { q: "¿Qué cae del cielo cuando llueve? 🌧️", r: ["Gotas de agua 💧", "Pelotas ⚽", "Galletas 🍪", "Globos 🎈"], c: 0 },
+  { q: "¿Qué es blanco y cae en invierno? ❄️", r: ["La nieve ❄️", "La arena 🏖️", "Las hojas 🍂", "Las flores 🌷"], c: 0 },
+  { q: "¿Qué usamos cuando llueve? 🌧️", r: ["Paraguas ☂️", "Gafas de sol 🕶️", "Ventilador", "Pelota ⚽"], c: 0 },
+  { q: "¿Qué sale después de la lluvia con muchos colores? 🌈", r: ["El arcoíris 🌈", "La luna 🌙", "El hielo 🧊", "La niebla"], c: 0 },
+  { q: "¿Qué nos calienta de día? ☀️", r: ["El sol ☀️", "La luna 🌙", "Las estrellas ⭐", "La lluvia 🌧️"], c: 0 },
+  { q: "¿Qué brilla en el cielo de noche? 🌙", r: ["La luna 🌙", "El sol ☀️", "El arcoíris 🌈", "La lluvia 🌧️"], c: 0 },
+  { q: "¿Qué mueve las hojas de los árboles? 💨", r: ["El viento 💨", "La lluvia 🌧️", "La nieve ❄️", "El sol ☀️"], c: 0 },
+  { q: "¿Qué usamos cuando hay mucho sol? 😎", r: ["Gafas de sol 🕶️", "Paraguas ☂️", "Bufanda 🧣", "Linterna 🔦"], c: 0 },
+  { q: "¿Qué es el agua congelada? 🧊", r: ["El hielo 🧊", "El vapor", "La arena 🏖️", "El barro"], c: 0 },
+  { q: "¿Qué estación es cuando hace mucho calor? 🏖️", r: ["El verano ☀️", "El invierno ❄️", "El otoño 🍂", "La primavera 🌸"], c: 0 },
+  { q: "¿En qué estación caen las hojas? 🍂", r: ["El otoño 🍂", "La primavera 🌸", "El verano ☀️", "El invierno ❄️"], c: 0 },
+  { q: "¿En qué estación florecen las flores? 🌸", r: ["La primavera 🌸", "El invierno ❄️", "El verano ☀️", "El otoño 🍂"], c: 0 },
+  { q: "¿En qué estación hace mucho frío y nieva? ❄️", r: ["El invierno ❄️", "El verano ☀️", "La primavera 🌸", "El otoño 🍂"], c: 0 },
+  { q: "¿Qué hacemos con la nieve? ⛄", r: ["Un muñeco de nieve ⛄", "Un castillo de arena 🏖️", "Una cometa 🪁", "Un picnic 🧺"], c: 0 },
+  { q: "¿Qué usas para no mojarte los pies en un charco? 🌧️", r: ["Botas de agua 👢", "Chanclas 🩴", "Calcetines", "Gafas de sol 🕶️"], c: 0 },
+  { q: "¿Qué te pones en los pies para salir? 👟", r: ["Los zapatos 👟", "El sombrero 🎩", "Los guantes 🧤", "La bufanda 🧣"], c: 0 },
+  { q: "¿Qué te pones en la cabeza cuando hace sol? 🧢", r: ["La gorra 🧢", "Los zapatos 👟", "Los guantes 🧤", "El pijama"], c: 0 },
+  { q: "¿Qué te abriga cuando hace frío? 🥶", r: ["El abrigo 🧥", "El bañador 🩱", "Las chanclas 🩴", "La camiseta de tirantes"], c: 0 },
+  { q: "¿Con qué te secas después del baño? 🛁", r: ["La toalla 🛁", "El peine", "El plato 🍽️", "El calcetín"], c: 0 },
+  { q: "¿Qué te pones para ir a la playa? 🏖️", r: ["El bañador 🩱", "El abrigo 🧥", "La bufanda 🧣", "Las botas de nieve"], c: 0 },
+  { q: "¿Qué te pones cuando llueve para no mojarte? ☔", r: ["El chubasquero", "El bañador 🩱", "Las chanclas 🩴", "La gorra 🧢"], c: 0 },
+  { q: "¿Qué te pones en las manos de frío? 🧤", r: ["Los guantes 🧤", "Los zapatos 👟", "El sombrero 🎩", "Las gafas 🕶️"], c: 0 },
+  { q: "¿Qué te rodea el cuello de frío? 🧣", r: ["La bufanda 🧣", "El cinturón", "Las gafas 🕶️", "Los calcetines"], c: 0 },
+  { q: "¿Qué te pones para dormir? 😴", r: ["El pijama 😴", "El bañador 🩱", "El abrigo 🧥", "El uniforme"], c: 0 },
+  { q: "¿Qué te pones en las piernas? 👖", r: ["Los pantalones 👖", "La camiseta 👕", "El gorro 🧢", "Los guantes 🧤"], c: 0 },
+  { q: "¿Qué abrochas en la parte de arriba? 👔", r: ["La camisa 👔", "Los zapatos 👟", "El gorro 🧢", "Los calcetines"], c: 0 },
+  { q: "¿Qué te atan en los zapatos? 👟", r: ["Los cordones 🎀", "Los botones", "Las mangas", "El cinturón"], c: 0 },
+  { q: "¿Qué protege tus ojos del sol? 🕶️", r: ["Las gafas de sol 🕶️", "El gorro 🧢", "La bufanda 🧣", "Los guantes 🧤"], c: 0 },
+  { q: "¿Qué llevas en la muñeca para ver la hora? ⌚", r: ["El reloj ⌚", "El anillo 💍", "El zapato 👟", "El sombrero 🎩"], c: 0 },
+  { q: "¿Qué lleva un bebé para no ensuciar? 👶", r: ["El pañal 👶", "La corbata 👔", "Las gafas 🕶️", "El cinturón"], c: 0 },
+  { q: "¿Dónde dormimos por la noche? 😴", r: ["En la cama 🛏️", "En la bañera 🛁", "En la cocina 🍳", "En el parque 🛝"], c: 0 },
+  { q: "¿Dónde se cocina la comida? 🍳", r: ["En la cocina 🍳", "En el baño 🛁", "En el dormitorio 🛏️", "En el balcón"], c: 0 },
+  { q: "¿Dónde nos duchamos? 🚿", r: ["En el baño 🚿", "En la cocina 🍳", "En el salón 🛋️", "En el garaje"], c: 0 },
+  { q: "¿Dónde vemos la tele? 📺", r: ["En el salón 🛋️", "En el baño 🚿", "En el dormitorio 🛏️", "En la cocina 🍳"], c: 0 },
+  { q: "¿Dónde comemos todos sentados? 🍽️", r: ["En el comedor 🍽️", "En la bañera 🛁", "En el garaje", "En el tejado"], c: 0 },
+  { q: "¿Dónde guardamos la ropa? 👗", r: ["En el armario", "En la nevera", "En el horno", "En la bañera 🛁"], c: 0 },
+  { q: "¿Dónde van los libros? 📚", r: ["En la estantería 📚", "En la nevera", "En el horno", "En la bañera 🛁"], c: 0 },
+  { q: "¿En qué nos sentamos? 🪑", r: ["En la silla 🪑", "En la bañera 🛁", "En el suelo frío", "En la nevera"], c: 0 },
+  { q: "¿Dónde tiramos lo que ya no sirve? 🗑️", r: ["En la papelera 🗑️", "En la cama 🛏️", "En la nevera", "En el zapato"], c: 0 },
+  { q: "¿Qué ilumina la casa? 💡", r: ["La bombilla 💡", "La nevera", "El grifo 🚰", "La almohada"], c: 0 },
+  { q: "¿Qué abres para salir a la calle? 🚪", r: ["La puerta 🚪", "La nevera", "El grifo 🚰", "El cajón"], c: 0 },
+  { q: "¿Qué abres para ver llover desde casa? 🪟", r: ["La ventana 🪟", "La nevera", "El horno", "El zapato"], c: 0 },
+  { q: "¿Dónde fregamos los platos? 🧽", r: ["En el fregadero 🧽", "En la cama 🛏️", "En el salón 🛋️", "En el armario"], c: 0 },
+  { q: "¿Dónde guardamos la comida fría? ❄️", r: ["En la nevera", "En el armario 👗", "En el sofá 🛋️", "En la caja de juguetes"], c: 0 },
+  { q: "¿Por qué subimos para ir arriba en casa? 🪜", r: ["Las escaleras 🪜", "La puerta 🚪", "La ventana 🪟", "El grifo 🚰"], c: 0 },
+  { q: "¿En qué pones las flores? 🏺", r: ["En el jarrón 🏺", "En la nevera", "En el zapato", "En la papelera 🗑️"], c: 0 },
+  { q: "¿Dónde juegas fuera con el columpio? 🛝", r: ["En el parque 🛝", "En la cocina 🍳", "En el baño 🚿", "En el dormitorio 🛏️"], c: 0 },
+  { q: "¿Dónde guardas tus juguetes? 🧸", r: ["En la caja de juguetes 🧸", "En la nevera", "En el horno", "En la bañera 🛁"], c: 0 },
+  { q: "¿Qué usas para ver tu reflejo? 🪞", r: ["El espejo 🪞", "La almohada", "El calcetín", "La sartén"], c: 0 },
+  { q: "¿Dónde lavas la ropa? 🧺", r: ["En la lavadora 🧺", "En el horno", "En la cama 🛏️", "En el salón 🛋️"], c: 0 },
+  { q: "¿Qué bebes cuando tienes sed? 💧", r: ["Agua 💧", "Salsa de tomate", "Leche de colores", "Aceite"], c: 0 },
+  { q: "¿Qué bebida blanca nos da la vaca? 🥛", r: ["La leche 🥛", "El zumo de naranja 🧃", "El agua 💧", "La sopa 🍲"], c: 0 },
+  { q: "¿Qué es redondo, con queso y tomate? 🍕", r: ["La pizza 🍕", "La sopa 🍲", "El arroz 🍚", "El plátano 🍌"], c: 0 },
+  { q: "¿Qué comemos en el cumpleaños? 🎂", r: ["La tarta 🎂", "La sopa 🍲", "El arroz 🍚", "La lechuga 🥬"], c: 0 },
+  { q: "¿Qué dulce es de cacao? 🍫", r: ["El chocolate 🍫", "La lechuga 🥬", "El arroz 🍚", "El pescado 🐟"], c: 0 },
+  { q: "¿Qué untamos en el pan? 🍞", r: ["La mermelada 🍓", "La sopa 🍲", "El arroz 🍚", "La pasta 🍝"], c: 0 },
+  { q: "¿Qué postre frío y dulce en un cucurucho? 🍦", r: ["El helado 🍦", "La sopa 🍲", "El arroz 🍚", "El pescado 🐟"], c: 0 },
+  { q: "¿Qué comemos con cuchara, caliente? 🍲", r: ["La sopa 🍲", "La manzana 🍎", "La galleta 🍪", "El plátano 🍌"], c: 0 },
+  { q: "¿Qué comemos con tenedor, largo y fino? 🍝", r: ["La pasta 🍝", "La sopa 🍲", "El yogur", "El helado 🍦"], c: 0 },
+  { q: "¿De qué hacemos el pan? 🌾", r: ["De harina 🌾", "De chocolate 🍫", "De agua 💧", "De arena 🏖️"], c: 0 },
+  { q: "¿Qué dulce hacen las abejas? 🍯", r: ["La miel 🍯", "El pan 🍞", "La sopa 🍲", "El queso 🧀"], c: 0 },
+  { q: "¿De qué animal sacamos el queso? 🧀", r: ["De la vaca 🐄", "Del pez 🐟", "Del pollo 🐔", "Del caballo 🐴"], c: 0 },
+  { q: "¿Qué comemos frito o revuelto, amarillo? 🍳", r: ["El huevo 🍳", "La manzana 🍎", "La lechuga 🥬", "El plátano 🍌"], c: 0 },
+  { q: "¿Qué bebes de un bote, de naranja? 🧃", r: ["El zumo 🧃", "La sopa 🍲", "El aceite", "La miel 🍯"], c: 0 },
+  { q: "¿Qué es redondo y de pan con jamón? 🥪", r: ["El bocadillo 🥪", "La sopa 🍲", "El arroz 🍚", "El yogur"], c: 0 },
+  { q: "¿Qué merienda redonda con pepitas de chocolate? 🍪", r: ["La galleta 🍪", "La sopa 🍲", "El arroz 🍚", "La lechuga 🥬"], c: 0 },
+  { q: "¿Qué bebes de una botella? 🍼", r: ["El agua 💧", "La sopa 🍲", "El aire", "La arena 🏖️"], c: 0 },
+  { q: "¿Qué comemos del mar, con espinas? 🐟", r: ["El pescado 🐟", "La manzana 🍎", "El pan 🍞", "La galleta 🍪"], c: 0 },
+  { q: "¿Qué postre es de fresa, frío y cremoso? 🍓", r: ["El yogur de fresa 🍓", "La sopa 🍲", "El arroz 🍚", "El pescado 🐟"], c: 0 },
+  { q: "¿Qué bebida con gas hace cosquillas? 🥤", r: ["El refresco 🥤", "La leche 🥛", "El agua 💧", "La sopa 🍲"], c: 0 },
+  { q: "¿Qué crece en el jardín, es bonito y huele bien? 🌷", r: ["Las flores 🌷", "Los coches 🚗", "Los zapatos 👟", "Las nubes ☁️"], c: 0 },
+  { q: "¿Qué es muy grande, con tronco y ramas? 🌳", r: ["El árbol 🌳", "La flor 🌷", "La piedra", "La nube ☁️"], c: 0 },
+  { q: "¿Qué va de flor en flor volando? 🦋", r: ["La mariposa 🦋", "El pez 🐟", "El elefante 🐘", "La tortuga 🐢"], c: 0 },
+  { q: "¿Qué cae de los árboles en otoño? 🍂", r: ["Las hojas 🍂", "Los peces 🐟", "Los coches 🚗", "Las pelotas ⚽"], c: 0 },
+  { q: "¿Qué necesitas para que una planta crezca? 🌱", r: ["Agua y sol 💧☀️", "Chocolate 🍫", "Juguetes 🧸", "Coche 🚗"], c: 0 },
+  { q: "¿Qué construyes con arena en la playa? 🏖️", r: ["Un castillo de arena 🏰", "Una cama 🛏️", "Un avión ✈️", "Una nevera"], c: 0 },
+  { q: "¿Qué hay en el mar? 🌊", r: ["Peces y olas 🐟", "Monos 🐵", "Vacas 🐄", "Árboles 🌳"], c: 0 },
+  { q: "¿Qué es muy alto y a veces tiene nieve arriba? ⛰️", r: ["La montaña ⛰️", "El charco 💧", "El sofá 🛋️", "El zapato 👟"], c: 0 },
+  { q: "¿Qué cae del cielo en forma de gotas? 🌧️", r: ["La lluvia 🌧️", "La arena 🏖️", "Las piedras", "Las pelotas ⚽"], c: 0 },
+  { q: "¿Dónde crece la hierba? 🌱", r: ["En el suelo 🌍", "En el cielo ☁️", "En la nevera", "En el baño 🛁"], c: 0 },
+  { q: "¿Qué brillan por la noche en el cielo? ⭐", r: ["Las estrellas ⭐", "Las flores 🌷", "Los peces 🐟", "Los coches 🚗"], c: 0 },
+  { q: "¿Qué flor es alta y amarilla, sigue al sol? 🌻", r: ["El girasol 🌻", "La violeta", "El cactus 🌵", "El nenúfar"], c: 0 },
+  { q: "¿Qué planta tiene púas y vive en el desierto? 🌵", r: ["El cactus 🌵", "La rosa 🌹", "La lechuga 🥬", "El pino 🌲"], c: 0 },
+  { q: "¿Qué árbol tiene pinitos y es de Navidad? 🎄", r: ["El pino 🎄", "La palmera 🌴", "El limonero 🍋", "El roble"], c: 0 },
+  { q: "¿Qué insecto brilla por la noche? ✨", r: ["La luciérnaga ✨", "La mosca", "La hormiga 🐜", "El grillo"], c: 0 },
+  { q: "¿Qué animal vive en un panal? 🐝", r: ["Las abejas 🐝", "Los peces 🐟", "Los perros 🐶", "Los gatos 🐱"], c: 0 },
+  { q: "¿Qué hacemos con las hojas secas en otoño? 🍂", r: ["Jugar y lanzarlas 🍂", "Comérnoslas 🍽️", "Dormir encima 😴", "Pintarlas de azul"], c: 0 },
+  { q: "¿Qué es resbaladizo y blanco en la montaña en invierno? ❄️", r: ["La nieve ❄️", "La arena 🏖️", "El barro", "La hierba 🌱"], c: 0 },
+  { q: "¿Qué necesitas para volar una cometa? 🪁", r: ["Viento 💨", "Agua 💧", "Fuego 🔥", "Arena 🏖️"], c: 0 },
+  { q: "¿Qué animal busca hormiguitas con su lengua larga? 🐜", r: ["El oso hormiguero", "El pez 🐟", "El gato 🐱", "La gallina 🐔"], c: 0 },
+  { q: "¿De qué forma es una pelota? ⚽", r: ["Redonda ⚪", "Cuadrada", "Triangular", "De estrella"], c: 0 },
+  { q: "¿De qué forma es una caja? 📦", r: ["Cuadrada 🟥", "Redonda ⚪", "Triangular", "Ovalada"], c: 0 },
+  { q: "¿De qué forma tiene tres lados? 🔺", r: ["El triángulo 🔺", "El círculo ⚪", "El cuadrado 🟥", "El óvalo"], c: 0 },
+  { q: "¿De qué forma es un huevo? 🥚", r: ["Ovalada 🥚", "Cuadrada 🟥", "Triangular 🔺", "De estrella ⭐"], c: 0 },
+  { q: "¿De qué forma es una estrella? ⭐", r: ["De estrella ⭐", "Cuadrada 🟥", "Ovalada", "Triangular 🔺"], c: 0 },
+  { q: "¿De qué forma es un corazón? ❤️", r: ["De corazón ❤️", "Cuadrada 🟥", "Triangular 🔺", "Ovalada"], c: 0 },
+  { q: "¿De qué forma es la cara de un reloj? 🕐", r: ["Redonda ⚪", "Cuadrada 🟥", "Triangular 🔺", "De estrella ⭐"], c: 0 },
+  { q: "¿De qué forma es una puerta? 🚪", r: ["Rectangular 🚪", "Redonda ⚪", "Triangular 🔺", "Ovalada"], c: 0 },
+  { q: "¿Qué forma tiene una rebanada de pizza? 🔺", r: ["Triangular 🔺", "Redonda ⚪", "Cuadrada 🟥", "Ovalada"], c: 0 },
+  { q: "¿De qué forma es una galleta? 🍪", r: ["Redonda ⚪", "Triangular 🔺", "Cuadrada 🟥", "De estrella ⭐"], c: 0 },
+  { q: "¿Quién es la mamá de tu mamá? 👵", r: ["La abuela 👵", "La maestra", "La vecina", "La doctora"], c: 0 },
+  { q: "¿Quién es el papá de tu papá? 👴", r: ["El abuelo 👴", "El bombero", "El panadero", "El piloto"], c: 0 },
+  { q: "¿Quién te enseña en el cole? 👩‍🏫", r: ["La maestra 👩‍🏫", "La doctora", "La panadera", "La piloto"], c: 0 },
+  { q: "¿Quién apaga fuegos? 🚒", r: ["El bombero 🚒", "El panadero", "El peluquero", "El cartero"], c: 0 },
+  { q: "¿Quién te cuida cuando estás malo? 🩺", r: ["El doctor 🩺", "El panadero", "El fontanero", "El piloto"], c: 0 },
+  { q: "¿Quién te corta el pelo? 💇", r: ["El peluquero 💇", "El bombero 🚒", "El cartero", "El piloto"], c: 0 },
+  { q: "¿Quién trae las cartas? 📬", r: ["El cartero 📬", "El doctor 🩺", "El panadero", "El peluquero 💇"], c: 0 },
+  { q: "¿Quién hace el pan? 🥖", r: ["El panadero 🥖", "El bombero 🚒", "El piloto ✈️", "El cartero 📬"], c: 0 },
+  { q: "¿Quién conduce el autobús? 🚌", r: ["El conductor 🚌", "La doctora", "La maestra 👩‍🏫", "La abuela 👵"], c: 0 },
+  { q: "¿Quién pilota un avión? ✈️", r: ["El piloto ✈️", "El panadero", "El peluquero 💇", "El cartero 📬"], c: 0 },
+  { q: "¿Cuál es lo contrario de GRANDE? 🐘", r: ["Pequeño 🐭", "Rápido", "Fuerte", "Alto"], c: 0 },
+  { q: "¿Cuál es lo contrario de CALIENTE? 🔥", r: ["Frío 🧊", "Mojado", "Rápido", "Suave"], c: 0 },
+  { q: "¿Cuál es lo contrario de DÍA? ☀️", r: ["Noche 🌙", "Tarde", "Mañana", "Soleado"], c: 0 },
+  { q: "¿Cuál es lo contrario de RÁPIDO? 🐇", r: ["Lento 🐢", "Fuerte", "Alto", "Grande"], c: 0 },
+  { q: "¿Cuál es lo contrario de ARRIBA? ⬆️", r: ["Abajo ⬇️", "Dentro", "Cerca", "Lejos"], c: 0 },
+  { q: "¿Cuál es lo contrario de ABIERTO? 🚪", r: ["Cerrado 🔒", "Alto", "Lleno", "Mojado"], c: 0 },
+  { q: "¿Cuál es lo contrario de LIMPIO? ✨", r: ["Sucio", "Rápido", "Frío", "Pequeño"], c: 0 },
+  { q: "¿Cuál es lo contrario de LLENO? 🥛", r: ["Vacío", "Caliente", "Alto", "Rápido"], c: 0 },
+  { q: "¿Cuál es lo contrario de RUIDO? 🔊", r: ["Silencio 🤫", "Frío", "Agua 💧", "Día"], c: 0 },
+  { q: "¿Cuál es lo contrario de CONTENTO? 😊", r: ["Triste 😢", "Cansado", "Hambriento", "Mojado"], c: 0 },
+  { q: "¿Cuál es lo contrario de MOJADO? 💧", r: ["Seco", "Frío", "Rápido", "Grande"], c: 0 },
+  { q: "¿Cuál es lo contrario de LARGO? 🐍", r: ["Corto", "Ancho", "Alto", "Pesado"], c: 0 },
+  { q: "¿Cuál es lo contrario de PESADO? 🪨", r: ["Ligero 🎈", "Frío", "Rápido", "Mojado"], c: 0 },
+  { q: "¿Cuál es lo contrario de DULCE? 🍬", r: ["Salado 🧂", "Frío", "Caliente", "Suave"], c: 0 },
+  { q: "¿Cuál es lo contrario de VIEJO? 🕰️", r: ["Nuevo ✨", "Rápido", "Grande", "Alto"], c: 0 },
+  { q: "¿Con qué comes la sopa? 🍲", r: ["Con cuchara 🥄", "Con tenedor 🍴", "Con cuchillo 🔪", "Con pincel 🖌️"], c: 0 },
+  { q: "¿Con qué escribes? ✏️", r: ["Con lápiz ✏️", "Con cuchara 🥄", "Con peine", "Con escoba"], c: 0 },
+  { q: "¿Con qué cortas papel? ✂️", r: ["Con tijeras ✂️", "Con cuchara 🥄", "Con peine", "Con cepillo"], c: 0 },
+  { q: "¿Con qué limpias tus dientes? 🦷", r: ["Con el cepillo 🪥", "Con peine", "Con escoba", "Con cuchara 🥄"], c: 0 },
+  { q: "¿Con qué peinas el pelo? 💇", r: ["Con el peine 💇", "Con cuchillo 🔪", "Con escoba", "Con pincel 🖌️"], c: 0 },
+  { q: "¿Con qué lavas las manos para quitar gérmenes? 🧼", r: ["Con jabón 🧼", "Con leche 🥛", "Con harina", "Con aceite"], c: 0 },
+  { q: "¿Qué usas para ver mejor si no ves bien? 👓", r: ["Las gafas 👓", "El gorro 🧢", "Los guantes 🧤", "Las botas 👢"], c: 0 },
+  { q: "¿Para qué miras un reloj? ⌚", r: ["Para saber la hora ⌚", "Para comer 🍽️", "Para dormir 😴", "Para pintar 🎨"], c: 0 },
+  { q: "¿Con qué escuchas música? 🎵", r: ["Con la radio 📻", "Con el plato 🍽️", "Con el peine", "Con la escoba"], c: 0 },
+  { q: "¿Con qué llamas a la abuela? 📞", r: ["Con el teléfono 📞", "Con el plato 🍽️", "Con el zapato 👟", "Con la almohada"], c: 0 },
+  { q: "¿En qué ves dibujos animados? 📺", r: ["En la tele 📺", "En la nevera", "En el horno", "En la bañera 🛁"], c: 0 },
+  { q: "¿Con qué haces fotos? 📷", r: ["Con la cámara 📷", "Con la cuchara 🥄", "Con el peine", "Con la escoba"], c: 0 },
+  { q: "¿Con qué te secas el cuerpo? 🛁", r: ["Con la toalla 🛁", "Con el papel", "Con el calcetín", "Con el plato 🍽️"], c: 0 },
+  { q: "¿Con qué barres el suelo? 🧹", r: ["Con la escoba 🧹", "Con el tenedor 🍴", "Con el peine", "Con el pincel 🖌️"], c: 0 },
+  { q: "¿Con qué limpias un derrame en la mesa? 🧽", r: ["Con una bayeta 🧽", "Con el zapato 👟", "Con la gorra 🧢", "Con el cordón"], c: 0 },
+  { q: "¿Con qué abres la puerta de casa? 🔑", r: ["Con la llave 🔑", "Con la cuchara 🥄", "Con el peine", "Con el globo 🎈"], c: 0 },
+  { q: "¿Con qué ves en la oscuridad? 🔦", r: ["Con la linterna 🔦", "Con las gafas de sol 🕶️", "Con el plato 🍽️", "Con el calcetín"], c: 0 },
+  { q: "¿Con qué pintas con colores en papel? 🎨", r: ["Con pincel y pintura 🖌️", "Con la cuchara 🥄", "Con la escoba", "Con el peine"], c: 0 },
+  { q: "¿Cómo apagas las velas de la tarta? 🎂", r: ["Soplando 💨", "Comiendo 🍽️", "Durmiendo 😴", "Pintando 🎨"], c: 0 },
+  { q: "¿Dónde guardas el dinero? 👛", r: ["En la cartera 👛", "En la nevera", "En el horno", "En la bañera 🛁"], c: 0 },
+  { q: "¿Qué es redondo y pateas en el campo? ⚽", r: ["La pelota ⚽", "La muñeca 🪆", "El oso 🧸", "El libro 📚"], c: 0 },
+  { q: "¿Qué haces con agua y jabón que flota? 🫧", r: ["Burbujas 🫧", "Copos de nieve ❄️", "Galletas 🍪", "Piedras"], c: 0 },
+  { q: "¿En qué subes y bajas en el parque? 🛝", r: ["El columpio 🛝", "La nevera", "El horno", "La bañera 🛁"], c: 0 },
+  { q: "¿En qué das vueltas y vueltas en la plaza? 🎠", r: ["El carrusel 🎠", "El sofá 🛋️", "La cama 🛏️", "La mesa 🍽️"], c: 0 },
+  { q: "¿Por qué resbalas en el parque? 🛝", r: ["El tobogán 🛝", "La silla 🪑", "La puerta 🚪", "El grifo 🚰"], c: 0 },
+  { q: "¿Qué vuelas en el parque cuando hay viento? 🪁", r: ["La cometa 🪁", "La cuchara 🥄", "El zapato 👟", "La almohada"], c: 0 },
+  { q: "¿Qué construyes con bloques de colores? 🧱", r: ["Una torre 🏗️", "Una sopa 🍲", "Un baño 🛁", "Una siesta 😴"], c: 0 },
+  { q: "¿Qué haces con una cuerda? 🪢", r: ["Saltar 🤸", "Cortar ✂️", "Peinar 💇", "Barrer 🧹"], c: 0 },
+  { q: "¿Con qué dibujas en el papel? 🖍️", r: ["Con ceras de colores 🖍️", "Con la cuchara 🥄", "Con la escoba", "Con el peine"], c: 0 },
+  { q: "¿Qué soplas en tu tarta de cumpleaños? 🎂", r: ["Las velas 🕯️", "Las nubes ☁️", "Las hojas 🍂", "Las pelotas ⚽"], c: 0 },
+  { q: "¿Qué decoramos en Navidad con luces? 🎄", r: ["El árbol de Navidad 🎄", "La nevera", "El baño 🛁", "El coche 🚗"], c: 0 },
+  { q: "¿Qué te traen los Reyes Magos? 🎁", r: ["Regalos 🎁", "Zapatos viejos", "Calcetines mojados", "Piedras"], c: 0 },
+  { q: "¿Con qué envuelves un regalo? 🎀", r: ["Con papel de regalo 🎀", "Con sopa 🍲", "Con arroz 🍚", "Con arena 🏖️"], c: 0 },
+  { q: "¿Qué dices cuando te dan algo? 🙏", r: ["¡Gracias! 🙏", "¡Adiós! 👋", "¡No me gusta!", "¡Auxilio!"], c: 0 },
+  { q: "¿Qué dices al llegar al cole? 👋", r: ["¡Hola! 👋", "¡Adiós! 👋", "¡Gracias! 🙏", "¡Fuego!"], c: 0 }
+];
+
+// ==================== ESTADO ====================
+let nombreA = "Equipo 1", nombreB = "Equipo 2";
+let puntosA = 0, puntosB = 0;
+let ronda = 0;          // 0..19
+let faseEquipo = "A";   // en cada ronda primero juega A y luego B
+let fallos = 0;         // fallos en la pregunta actual
+let preguntasA, preguntasB;
+let respondido = false;
+
+function barajar(arr) {
+  const copia = arr.slice();
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+function barajarPregunta(p) {
+  // Mezcla las respuestas y recalcula el índice correcto
+  const pares = p.r.map((texto, i) => ({ texto, esCorrecta: i === p.c }));
+  const mezclado = barajar(pares);
+  return { q: p.q, r: mezclado.map(x => x.texto), c: mezclado.findIndex(x => x.esCorrecta) };
+}
+
+// ==================== SONIDOS ====================
+let audioCtx = null;
+function pitido(frecs, dur = 0.18, tipo = "sine") {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    frecs.forEach((f, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = tipo;
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime + i * dur);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (i + 1) * dur);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + i * dur);
+      osc.stop(audioCtx.currentTime + (i + 1) * dur);
+    });
+  } catch (e) { /* sin sonido */ }
+}
+const sonBien  = () => pitido([523, 659, 784]);          // do-mi-sol
+const sonGenial = () => pitido([523, 659, 784, 1047]);
+const sonMal   = () => pitido([220, 165], 0.25, "square");
+
+// ==================== CONFETI ====================
+function confeti(n = 24) {
+  const emojis = ["🎉", "⭐", "🎈", "🌟", "🎊", "🏅"];
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement("div");
+    c.className = "confeti";
+    c.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.animationDuration = (1.2 + Math.random() * 1.5) + "s";
+    c.style.fontSize = (1.2 + Math.random() * 1.6) + "rem";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3000);
+  }
+}
+
+// ==================== FLUJO DEL JUEGO ====================
+function empezarJuego() {
+  nombreA = document.getElementById("nombreA").value.trim() || "Equipo 1";
+  nombreB = document.getElementById("nombreB").value.trim() || "Equipo 2";
+  // Elegimos 40 preguntas al azar SIN repetir: 20 para cada equipo
+  const elegidas = barajar(bancoPreguntas.map(barajarPregunta));
+  preguntasA = elegidas.slice(0, 20);
+  preguntasB = elegidas.slice(20, 40);
+  puntosA = 0; puntosB = 0; ronda = 0; faseEquipo = "A";
+  document.getElementById("etiquetaA").textContent = nombreA;
+  document.getElementById("etiquetaB").textContent = nombreB;
+  document.getElementById("pantallaInicio").classList.add("oculto");
+  document.getElementById("pantallaJuego").classList.remove("oculto");
+  actualizarMarcador();
+  mostrarPregunta();
+}
+
+function actualizarMarcador() {
+  document.getElementById("puntosA").textContent = puntosA;
+  document.getElementById("puntosB").textContent = puntosB;
+  document.getElementById("globosA").textContent = "🎈".repeat(Math.min(5, Math.floor(puntosA / 200)));
+  document.getElementById("globosB").textContent = "🎈".repeat(Math.min(5, Math.floor(puntosB / 200)));
+  document.getElementById("cajaA").className = "equipo eqA" + (faseEquipo === "A" ? " activA" : "");
+  document.getElementById("cajaB").className = "equipo eqB" + (faseEquipo === "B" ? " activB" : "");
+}
+
+function mostrarPregunta() {
+  fallos = 0;
+  respondido = false;
+  const esA = faseEquipo === "A";
+  const p = esA ? preguntasA[ronda] : preguntasB[ronda];
+
+  document.getElementById("turno").textContent =
+    "🎤 Turno de: " + (esA ? nombreA : nombreB);
+  document.getElementById("progreso").textContent =
+    "Pregunta " + (ronda + 1) + " de 20";
+  document.getElementById("pregunta").textContent = p.q;
+  document.getElementById("mensaje").innerHTML = "";
+  actualizarMarcador();
+
+  const cont = document.getElementById("opciones");
+  cont.innerHTML = "";
+  p.r.forEach((texto, i) => {
+    const btn = document.createElement("button");
+    btn.className = "opcion";
+    // Separa el emoji del texto si existe
+    const partes = texto.split(" ");
+    const emoji = /\p{Emoji_Presentation}/u.test(partes[partes.length - 1]) ? partes.pop() : "";
+    btn.innerHTML = (emoji ? `<span class="emoji">${emoji}</span>` : "") + partes.join(" ");
+    btn.onclick = () => elegir(btn, i, p);
+    cont.appendChild(btn);
+  });
+}
+
+function elegir(btn, i, p) {
+  if (respondido) return;
+  const esA = faseEquipo === "A";
+  const msg = document.getElementById("mensaje");
+  const botones = [...document.querySelectorAll(".opcion")];
+
+  if (i === p.c) {
+    // ---------- ACIERTO ----------
+    respondido = true;
+    btn.classList.add("ok");
+    botones.forEach(b => b.disabled = true);
+    const puntos = fallos === 0 ? 100 : 50;
+    if (esA) puntosA += puntos; else puntosB += puntos;
+    actualizarMarcador();
+    if (fallos === 0) {
+      sonGenial();
+      confeti(30);
+      msg.innerHTML = `🎉 ¡¡MUY BIEN!! Acertaste a la primera 🎉<span class="puntos-ganados">+100 puntos</span>`;
+    } else {
+      sonBien();
+      confeti(15);
+      msg.innerHTML = `👏 ¡MUY BIEN! Acertaste en la segunda 👏<span class="puntos-ganados">+50 puntos</span>`;
+    }
+    botonSiguiente();
+  } else {
+    // ---------- FALLO ----------
+    btn.classList.add("malo");
+    btn.disabled = true;
+    fallos++;
+    if (fallos === 1) {
+      sonMal();
+      msg.innerHTML = "🔄 ¡Casi! Tienes una <b>SEGUNDA OPORTUNIDAD</b>, ¡inténtalo otra vez! 💪";
+      setTimeout(() => btn.classList.add("tachada"), 600);
+    } else {
+      // Segundo fallo: se muestra la correcta y se pasa de pregunta
+      respondido = true;
+      botones.forEach(b => b.disabled = true);
+      botones[p.c].classList.add("ok");
+      sonMal();
+      msg.innerHTML = "😅 ¡Oh, no! La respuesta era: <b>" + p.r[p.c] + "</b><br>No pasa nada, ¡la próxima será!";
+      botonSiguiente();
+    }
+  }
+}
+
+function botonSiguiente() {
+  const msg = document.getElementById("mensaje");
+  const b = document.createElement("button");
+  b.className = "boton";
+  b.textContent = (faseEquipo === "A") ? "➡️ Turno del otro equipo" : "➡️ Siguiente pregunta";
+  b.onclick = pasarSiguiente;
+  msg.appendChild(b);
+}
+
+function pasarSiguiente() {
+  if (faseEquipo === "A") {
+    faseEquipo = "B";
+  } else {
+    faseEquipo = "A";
+    ronda++;
+  }
+  if (ronda >= 20) { finalJuego(); return; }
+  mostrarPregunta();
+}
+
+function finalJuego() {
+  document.getElementById("pantallaJuego").classList.add("oculto");
+  document.getElementById("pantallaFinal").classList.remove("oculto");
+  document.getElementById("finalA").textContent = nombreA + ": " + puntosA + " puntos";
+  document.getElementById("finalB").textContent = nombreB + ": " + puntosB + " puntos";
+  const t = document.getElementById("campeonTexto");
+  const e = document.getElementById("campeonEmoji");
+  if (puntosA > puntosB)      { t.textContent = "¡Ganó " + nombreA + "!"; e.textContent = "🏆🥇"; }
+  else if (puntosB > puntosA) { t.textContent = "¡Ganó " + nombreB + "!"; e.textContent = "🏆🥇"; }
+  else                        { t.textContent = "¡EMPATE! ¡Los dos son geniales!"; e.textContent = "🤝🌟"; }
+  sonGenial();
+  confeti(60);
+}
+</script>
+</body>
+</html>
