@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valoria 1836 — Gran Estrategia Económica</title>
+<style>
+/* =====================================================================
+   ESTILOS — estética de mapa político del siglo XIX
+   ===================================================================== */
+:root {
+  --bg: #0d1520; --bg2: #111c2a; --bg3: #16243a;
+  --parch: #241f17; --parch2: #2c261b; --parch3: #362e20;
+  --gold: #c9a227; --gold2: #e6c75a; --gold-dim: #8a7234;
+  --text: #ebe2cb; --muted: #a59c86; --faint: #6f6858;
+  --border: #4a3e26; --border2: #5e4e2c;
+  --red: #c8553d; --green: #7bb35a; --blue: #5b8fc7; --amber: #d89a2e;
+  --serif: Georgia, 'Times New Roman', serif;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; color: var(--text); font: 14px/1.45 var(--sans);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(201,162,39,.06), transparent 60%),
+    radial-gradient(ellipse at 80% 90%, rgba(91,143,199,.06), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(201,162,39,.035) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(90deg, rgba(201,162,39,.035) 0 1px, transparent 1px 64px);
+  overflow: hidden;
+}
+h1, h2, h3, h4 { font-family: var(--serif); color: var(--gold); font-weight: normal; margin: 0 0 .5em; letter-spacing: .02em; }
+h2 { font-size: 1.45em; border-bottom: 1px solid var(--border); padding-bottom: .3em; }
+h3 { font-size: 1.12em; }
+button { font: inherit; cursor: pointer; }
+.muted { color: var(--muted); } .faint { color: var(--faint); }
+.pos { color: var(--green); } .neg { color: var(--red); } .warn { color: var(--amber); } .gold { color: var(--gold2); }
+.small { font-size: .86em; }
+.serif { font-family: var(--serif); }
+.right { text-align: right; }
+.hidden { display: none !important; }
+
+/* ---------- Disposición general ---------- */
+#app { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
+#top {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 10px;
+  background: linear-gradient(180deg, #1c2a3e, #121d2c); border-bottom: 2px solid var(--gold-dim);
+  box-shadow: 0 2px 12px rgba(0,0,0,.5); position: relative; z-index: 5;
+}
+#top .brand { font-family: var(--serif); color: var(--gold); font-size: 1.25em; margin-right: 6px; white-space: nowrap; }
+#top .brand small { color: var(--muted); font-size: .65em; display: block; margin-top: -3px; letter-spacing: .12em; }
+.stat {
+  display: flex; flex-direction: column; padding: 2px 9px; border: 1px solid var(--border); border-radius: 4px;
+  background: rgba(36,31,23,.75); min-width: 76px; cursor: help;
+}
+.stat .l { font-size: .7em; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.stat .v { font-family: var(--serif); font-size: 1.05em; white-space: nowrap; }
+.stat.date .v { color: var(--gold2); min-width: 128px; }
+.speed { display: flex; gap: 2px; }
+.speed button, .btn {
+  background: linear-gradient(180deg, #3a3122, #262016); color: var(--text); border: 1px solid var(--border2);
+  border-radius: 4px; padding: 4px 9px; transition: .12s;
+}
+.speed button:hover, .btn:hover:not([aria-disabled=true]) { border-color: var(--gold); color: var(--gold2); }
+.speed button.on { background: linear-gradient(180deg, #8a7234, #5e4e22); color: #fff6d8; border-color: var(--gold); }
+.btn.primary { background: linear-gradient(180deg, #a68620, #6e5815); color: #fff8dd; border-color: var(--gold2); }
+.btn.danger { background: linear-gradient(180deg, #6e2a1e, #4a1a12); border-color: #8e3a2a; }
+.btn[aria-disabled=true] { opacity: .42; cursor: not-allowed; }
+.btn.sm { padding: 2px 7px; font-size: .86em; }
+.spacer { flex: 1; }
+
+#main { display: grid; grid-template-columns: 190px 1fr; min-height: 0; }
+#tabs { background: linear-gradient(180deg, #121d2b, #0d1520); border-right: 1px solid var(--border); padding: 10px 8px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+#tabs button {
+  text-align: left; padding: 9px 10px; border: 1px solid transparent; border-radius: 4px; background: transparent;
+  color: var(--muted); font-family: var(--serif); font-size: 1.02em; display: flex; gap: 8px; align-items: center;
+}
+#tabs button:hover { color: var(--text); background: rgba(201,162,39,.07); }
+#tabs button.on { color: var(--gold2); border-color: var(--border2); background: linear-gradient(90deg, rgba(201,162,39,.16), rgba(201,162,39,.02)); }
+#tabs .ic { width: 22px; text-align: center; }
+#tabs .badge { margin-left: auto; background: var(--red); color: #fff; border-radius: 9px; font: 11px var(--sans); padding: 0 6px; }
+#tabs .foot { margin-top: auto; font-size: .78em; color: var(--faint); padding: 6px; line-height: 1.35; }
+#panel { overflow-y: auto; padding: 16px 20px 40px; min-height: 0; }
+
+/* ---------- Paneles tipo pergamino ---------- */
+.card {
+  background: linear-gradient(180deg, var(--parch2), var(--parch)); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px 14px; box-shadow: inset 0 0 0 1px rgba(201,162,39,.06), 0 3px 10px rgba(0,0,0,.35);
+  position: relative;
+}
+.card::before { content: ''; position: absolute; inset: 3px; border: 1px solid rgba(201,162,39,.08); border-radius: 4px; pointer-events: none; }
+.grid { display: grid; gap: 14px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.gauto { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+@media (max-width: 1250px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } #main { grid-template-columns: 64px 1fr; } #tabs .lbl, #tabs .foot { display: none; } }
+.mt { margin-top: 14px; }
+.kpi { display: flex; flex-direction: column; gap: 2px; cursor: help; }
+.kpi .l { color: var(--muted); font-size: .78em; text-transform: uppercase; letter-spacing: .07em; }
+.kpi .v { font-family: var(--serif); font-size: 1.5em; color: var(--text); }
+.kpi .s { font-size: .82em; color: var(--muted); }
+.row { display: flex; align-items: center; gap: 8px; }
+.between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tag { display: inline-block; padding: 0 6px; border-radius: 3px; font-size: .8em; border: 1px solid var(--border2); color: var(--muted); }
+.tag.good { color: var(--green); border-color: #3f5e2e; } .tag.bad { color: var(--red); border-color: #6a2e22; } .tag.gold { color: var(--gold2); border-color: var(--gold-dim); }
+
+/* Barras */
+.bar { height: 8px; background: #15110b; border: 1px solid #3a311f; border-radius: 4px; overflow: hidden; position: relative; }
+.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold)); }
+.bar.green > i { background: linear-gradient(90deg, #4c7a34, var(--green)); }
+.bar.red > i { background: linear-gradient(90deg, #7a2e20, var(--red)); }
+.bar.blue > i { background: linear-gradient(90deg, #355a83, var(--blue)); }
+.bar.tall { height: 14px; }
+.bar .mark { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff8; }
+
+/* Tablas */
+table { width: 100%; border-collapse: collapse; }
+th { font-family: var(--serif); font-weight: normal; color: var(--gold); text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--border2); font-size: .92em; white-space: nowrap; }
+td { padding: 5px 6px; border-bottom: 1px solid rgba(74,62,38,.45); vertical-align: middle; }
+tr:hover td { background: rgba(201,162,39,.045); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.locked td { opacity: .5; }
+
+/* Tooltip */
+#tip {
+  position: fixed; z-index: 100; max-width: 340px; pointer-events: none; padding: 9px 11px; font-size: .88em; line-height: 1.45;
+  background: linear-gradient(180deg, #2f281b, #211c13); border: 1px solid var(--gold-dim); border-radius: 5px; color: var(--text);
+  box-shadow: 0 6px 22px rgba(0,0,0,.6); display: none;
+}
+#tip b { color: var(--gold2); font-weight: normal; font-family: var(--serif); }
+[data-tip] { cursor: help; }
+button[data-tip] { cursor: pointer; }
+
+/* Modal */
+#modal { position: fixed; inset: 0; z-index: 50; background: rgba(5,9,15,.72); display: flex; align-items: center; justify-content: center; padding: 20px; }
+#modal .box {
+  width: min(640px, 100%); max-height: 90vh; overflow-y: auto; background: linear-gradient(180deg, #2f2819, #1f1a12);
+  border: 2px solid var(--gold-dim); border-radius: 8px; padding: 22px 26px; box-shadow: 0 10px 50px rgba(0,0,0,.7), inset 0 0 0 4px rgba(201,162,39,.08);
+}
+#modal .box.wide { width: min(820px, 100%); }
+#modal h2 { text-align: center; border: none; font-size: 1.7em; }
+#modal .evic { text-align: center; font-size: 2.6em; line-height: 1; margin-bottom: 4px; }
+#modal .evtext { font-family: var(--serif); font-size: 1.07em; line-height: 1.6; color: #e8dcbf; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 12px 4px; margin-bottom: 14px; font-style: italic; }
+.opt { display: block; width: 100%; text-align: left; margin: 7px 0; padding: 10px 14px; background: linear-gradient(180deg, #3d3323, #2a2318); border: 1px solid var(--border2); border-radius: 5px; color: var(--text); }
+.opt:hover { border-color: var(--gold); background: linear-gradient(180deg, #4a3e28, #30281b); }
+.opt b { font-family: var(--serif); font-weight: normal; color: var(--gold2); font-size: 1.05em; }
+.opt span { display: block; color: var(--muted); font-size: .88em; margin-top: 2px; }
+#modal ul { padding-left: 20px; } #modal li { margin: 4px 0; }
+
+/* Mapa */
+.map svg { width: 100%; height: auto; display: block; }
+.map .prov { stroke: #c9a227; stroke-width: 1.3; stroke-opacity: .7; transition: .2s; }
+.map .prov:hover { fill-opacity: .95; stroke-width: 2.4; }
+.map text { font-family: var(--serif); fill: #2a2112; font-size: 11px; pointer-events: none; }
+
+/* Varios */
+.chart { width: 100%; height: 210px; display: block; }
+.legend { display: flex; gap: 14px; font-size: .82em; color: var(--muted); margin-top: 4px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 12px; height: 3px; vertical-align: middle; margin-right: 5px; }
+.log { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow-y: auto; }
+.log li { padding: 5px 2px; border-bottom: 1px dashed rgba(74,62,38,.6); font-size: .9em; }
+.log li .d { color: var(--gold-dim); font-family: var(--serif); margin-right: 6px; white-space: nowrap; }
+.log li.bad { color: #e9a08f; } .log li.good { color: #b6dc9c; } .log li.tech { color: #9cc2ea; } .log li.law { color: #e6c75a; }
+.alerts li { list-style: none; padding: 4px 0; }
+.alerts { padding: 0; margin: 0; }
+.tech { border: 1px solid var(--border); border-radius: 5px; padding: 9px 10px; margin-bottom: 9px; background: rgba(20,17,11,.55); cursor: pointer; transition: .12s; }
+.tech:hover { border-color: var(--gold); }
+.tech.done { border-color: #3f5e2e; background: rgba(60,90,40,.18); cursor: default; }
+.tech.cur { border-color: var(--gold2); box-shadow: 0 0 0 1px var(--gold) inset, 0 0 12px rgba(201,162,39,.25); }
+.tech.lock { opacity: .45; cursor: not-allowed; }
+.tech .tn { font-family: var(--serif); color: var(--gold2); }
+.tech.done .tn { color: var(--green); }
+.tech .td { font-size: .84em; color: var(--muted); margin: 2px 0 5px; }
+.slider { width: 100%; accent-color: var(--gold); }
+input[type=range] { cursor: pointer; }
+.lawopts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.lawopt { padding: 6px 9px; border: 1px solid var(--border2); border-radius: 4px; background: rgba(20,17,11,.5); color: var(--text); font-size: .9em; }
+.lawopt.on { border-color: var(--gold); background: linear-gradient(180deg, #6e5815, #3f320c); color: #fff3cc; cursor: default; }
+.lawopt[aria-disabled=true]:not(.on) { opacity: .45; cursor: not-allowed; }
+.lawopt.on { cursor: default; }
+.lawopt:not(.on):not([aria-disabled=true]):hover { border-color: var(--gold2); }
+.popcard .head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.popcard .head .ic { font-size: 1.6em; }
+.popcard .head h3 { margin: 0; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; font-size: .9em; }
+.kv span:nth-child(odd) { color: var(--muted); }
+.kv span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+.taxlvl { display: flex; gap: 3px; }
+.taxlvl button { flex: 1; padding: 3px 0; font-size: .8em; border: 1px solid var(--border2); border-radius: 3px; background: rgba(20,17,11,.5); color: var(--muted); }
+.taxlvl button.on { background: linear-gradient(180deg, #8a7234, #5e4e22); color: #fff; border-color: var(--gold); }
+.flash { animation: flash 1s; }
+@keyframes flash { from { background: rgba(201,162,39,.35); } to { background: transparent; } }
+::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-track { background: #0d1520; } ::-webkit-scrollbar-thumb { background: #3a311f; border-radius: 5px; } ::-webkit-scrollbar-thumb:hover { background: #5e4e2c; }
+#toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 60; background: #2f281b; border: 1px solid var(--gold); padding: 8px 16px; border-radius: 5px; display: none; box-shadow: 0 4px 20px rgba(0,0,0,.6); }
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="top"></header>
+  <div id="main">
+    <nav id="tabs"></nav>
+    <section id="panel"></section>
+  </div>
+</div>
+<div id="tip"></div>
+<div id="toast"></div>
+<div id="modal" class="hidden"><div class="box"></div></div>
+<script>
+'use strict';
+/* =====================================================================
+   VALORIA 1836 — Simulación económica y política
+   Sección 1: UTILIDADES
+   ===================================================================== */
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+let rand = Math.random;
+const sum = (arr) => arr.reduce((a, b) => a + b, 0);
+function fmt(n, d = 0) {
+  if (!isFinite(n)) return '—';
+  return n.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function fmtK(n) {
+  const a = Math.abs(n);
+  if (a >= 1e6) return fmt(n / 1e6, 2) + ' M';
+  if (a >= 1e4) return fmt(n / 1e3, 1) + ' k';
+  return fmt(n, 0);
+}
+function money(n) { return fmtK(n) + ' £'; }
+function pct(n, d = 0) { return fmt(n * 100, d) + '%'; }
+
+/* =====================================================================
+   Sección 2: DATOS DEL JUEGO (mercancías, clases, edificios, leyes...)
+   ===================================================================== */
+const START_YEAR = 1836, END_YEAR = 1936;
+const TOTAL_MONTHS = (END_YEAR - START_YEAR + 1) * 12;
+const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+const GOODS = {
+  grano:        { n: 'Grano', base: 20, ic: '🌾' },
+  carne:        { n: 'Carne', base: 30, ic: '🍖' },
+  madera:       { n: 'Madera', base: 20, ic: '🌲' },
+  ropa:         { n: 'Ropa', base: 30, ic: '👕', trend: -0.30 },
+  muebles:      { n: 'Muebles', base: 40, ic: '🪑', trend: -0.20 },
+  herramientas: { n: 'Herramientas', base: 40, ic: '🔨', trend: -0.30 },
+  hierro:       { n: 'Hierro', base: 40, ic: '⚙', trend: -0.15 },
+  carbon:       { n: 'Carbón', base: 30, ic: '⛏' },
+  petroleo:     { n: 'Petróleo', base: 40, ic: '🛢', tech: 'p10' },
+  electricidad: { n: 'Electricidad', base: 30, ic: '⚡', tech: 'p9', notrade: true },
+  papel:        { n: 'Papel', base: 30, ic: '📜' },
+  medicinas:    { n: 'Medicinas', base: 50, ic: '💊' },
+  lujo:         { n: 'Artículos de lujo', base: 60, ic: '💎' },
+};
+const GOOD_IDS = Object.keys(GOODS);
+
+const CLASS_IDS = ['terratenientes', 'capitalistas', 'artesanos', 'obreros', 'campesinos', 'burocratas', 'militares', 'clero'];
+const CLASSES = {
+  terratenientes: { n: 'Terratenientes', ic: '🏰', mult: 8, exp: 52, start: 40, wealth: 4000, save: 0.15, birth: 0.024, inc0: 80,
+    desc: 'Dueños de la tierra. Cobran rentas de las granjas de subsistencia y los beneficios de plantaciones y haciendas.' },
+  capitalistas: { n: 'Capitalistas', ic: '🎩', mult: 10, exp: 52, start: 10, wealth: 2000, save: 0.30, birth: 0.024, inc0: 50,
+    desc: 'Propietarios de minas, fábricas y bancos. Su riqueza no gastada alimenta la capacidad de inversión privada.' },
+  artesanos: { n: 'Artesanos', ic: '⚒', mult: 1.5, exp: 38, start: 300, wealth: 600, save: 0.03, birth: 0.030, inc0: 4.6,
+    desc: 'Producen ropa, muebles y herramientas a mano. La industria barata los arruina y acaban como obreros.' },
+  obreros: { n: 'Obreros', ic: '🏭', mult: 1.2, exp: 32, start: 160, wealth: 100, save: 0.02, birth: 0.034, inc0: 4,
+    desc: 'Trabajan en minas, aserraderos y fábricas a cambio de un salario. Si no hay empleo, vuelven al campo.' },
+  campesinos: { n: 'Campesinos', ic: '🌾', mult: 1, exp: 28, start: 6500, wealth: 3000, save: 0.02, birth: 0.036, inc0: 2.9,
+    desc: 'La inmensa mayoría. Cultivan en granjas de subsistencia o trabajan en plantaciones. Fuente de mano de obra industrial.' },
+  burocratas: { n: 'Burócratas', ic: '📋', mult: 2, exp: 44, start: 40, wealth: 300, save: 0.05, birth: 0.026, inc0: 10,
+    desc: 'Funcionarios pagados con el gasto en administración. Mejoran la recaudación.' },
+  militares: { n: 'Militares', ic: '⚔', mult: 1.5, exp: 38, start: 60, wealth: 200, save: 0.03, birth: 0.026, inc0: 7,
+    desc: 'Oficiales y soldados pagados con el gasto militar. Si se enfadan, pueden dar un golpe de estado.' },
+  clero: { n: 'Clero', ic: '⛪', mult: 2.5, exp: 42, start: 60, wealth: 600, save: 0.05, birth: 0.020, inc0: 10,
+    desc: 'Viven del diezmo y de la educación. Su tamaño e influencia dependen de la relación Iglesia-Estado.' },
+};
+
+// Necesidades por cada 1.000 habitantes y mes (multiplicadas por el factor de consumo de la clase)
+const NEEDS = [
+  { n: 'Subsistencia', w: 30, g: { grano: 0.10, madera: 0.02 } },
+  { n: 'Necesidades básicas', w: 25, g: { carne: 0.03, ropa: 0.04, herramientas: 0.01 } },
+  { n: 'Confort', w: 25, g: { muebles: 0.02, papel: 0.01, medicinas: 0.01, electricidad: 0.015 } },
+  { n: 'Lujo', w: 20, g: { lujo: 0.03, carne: 0.01, petroleo: 0.006 } },
+];
+
+const OPULENCE = { lujo: 0.4, muebles: 0.2, ropa: 0.15, carne: 0.15, papel: 0.1 };
+const WAGE_BASE = { campesinos: 2.6, obreros: 5, artesanos: 6, burocratas: 8, clero: 7, militares: 6, capitalistas: 0, terratenientes: 0 };
+
+// Categorías: agri (agricultura), ext (extracción), ind (industria), serv (servicios/estado)
+const BUILDINGS = {
+  subsistencia: { n: 'Granja de subsistencia', cat: 'agri', auto: true, ic: '🛖',
+    desc: 'Se ajusta sola: todos los campesinos sin otro empleo cultivan para sobrevivir. Produce 0,13 de grano y 0,025 de madera por cada 1.000 campesinos. El 15% va a los terratenientes como renta.' },
+  granja: { n: 'Plantación de grano', cat: 'agri', ic: '🌾', owner: 'terratenientes', cost: 1200, goods: { madera: 15, herramientas: 5 }, months: 6, max: 100,
+    work: { campesinos: 40 }, in: { herramientas: 0.2 }, out: { grano: 8 }, maint: 5, desc: 'Agricultura comercial. Mucho más productiva que la subsistencia.' },
+  hacienda: { n: 'Hacienda ganadera', cat: 'agri', ic: '🐄', owner: 'terratenientes', cost: 1400, goods: { madera: 20, herramientas: 4 }, months: 6, max: 60,
+    work: { campesinos: 30 }, in: { grano: 1 }, out: { carne: 6 }, maint: 5, desc: 'Cría de ganado. La carne es una necesidad básica.' },
+  lujo: { n: 'Plantación de lujo', cat: 'agri', ic: '🍷', owner: 'terratenientes', cost: 2000, goods: { madera: 15, herramientas: 5 }, months: 8, max: 40,
+    work: { campesinos: 40 }, in: { herramientas: 0.3 }, out: { lujo: 4 }, maint: 6, desc: 'Vino, tabaco y café para las clases ricas.' },
+  aserradero: { n: 'Aserradero', cat: 'ext', ic: '🪓', owner: 'capitalistas', cost: 1500, goods: { herramientas: 8, hierro: 4 }, months: 6, max: 60,
+    work: { obreros: 20 }, in: { herramientas: 0.2 }, out: { madera: 8 }, maint: 5, desc: 'Madera para construir, para muebles y para calentar los hogares.' },
+  mina_hierro: { n: 'Mina de hierro', cat: 'ext', ic: '⚙', owner: 'capitalistas', cost: 2200, goods: { madera: 20, herramientas: 10 }, months: 8, max: 40,
+    work: { obreros: 25 }, in: { herramientas: 0.3 }, out: { hierro: 6 }, maint: 8, desc: 'Hierro para herramientas, acero y construcción.' },
+  mina_carbon: { n: 'Mina de carbón', cat: 'ext', ic: '⛏', owner: 'capitalistas', cost: 2000, goods: { madera: 20, herramientas: 10 }, months: 8, max: 40,
+    work: { obreros: 25 }, in: { herramientas: 0.3 }, out: { carbon: 7 }, maint: 8, desc: 'El combustible de la revolución industrial.' },
+  pozo: { n: 'Pozo petrolero', cat: 'ext', ic: '🛢', owner: 'capitalistas', tech: 'p10', cost: 4000, goods: { hierro: 20, herramientas: 15 }, months: 10, max: 30,
+    work: { obreros: 20 }, in: { herramientas: 0.4 }, out: { petroleo: 8 }, maint: 10, desc: 'El oro negro del nuevo siglo.' },
+  textil: { n: 'Fábrica textil', cat: 'ind', ic: '🧵', owner: 'capitalistas', tech: 'p1', cost: 3000, goods: { madera: 25, hierro: 15, herramientas: 10 }, months: 9, max: 60,
+    work: { obreros: 25 }, in: { grano: 3, carbon: 1 }, out: { ropa: 10 }, maint: 10, desc: 'Ropa barata en masa (el grano representa las fibras agrícolas).' },
+  muebles: { n: 'Taller de muebles', cat: 'ind', ic: '🪑', owner: 'capitalistas', cost: 1800, goods: { madera: 15, herramientas: 6 }, months: 6, max: 50,
+    work: { artesanos: 10, obreros: 15 }, in: { madera: 5, herramientas: 0.5 }, out: { muebles: 8 }, maint: 5, desc: 'Muebles para el confort de los hogares.' },
+  herramientas: { n: 'Fábrica de herramientas', cat: 'ind', ic: '🔧', owner: 'capitalistas', tech: 'p3', cost: 3200, goods: { madera: 20, hierro: 25 }, months: 9, max: 60,
+    work: { obreros: 25 }, in: { hierro: 3, madera: 2 }, out: { herramientas: 9 }, maint: 10, desc: 'Herramientas: insumo clave de casi toda la economía.' },
+  aceria: { n: 'Acería', cat: 'ind', ic: '🔥', owner: 'capitalistas', tech: 'p6', cost: 6000, goods: { hierro: 40, herramientas: 20, madera: 20 }, months: 12, max: 40,
+    work: { obreros: 30 }, in: { hierro: 4, carbon: 4 }, out: { herramientas: 13 }, maint: 15, desc: 'Acero y maquinaria pesada. Cada nivel acelera un 2% la construcción.' },
+  papel: { n: 'Fábrica de papel', cat: 'ind', ic: '📜', owner: 'capitalistas', tech: 'p7', cost: 3000, goods: { madera: 20, hierro: 15, herramientas: 10 }, months: 9, max: 40,
+    work: { obreros: 20 }, in: { madera: 4 }, out: { papel: 8 }, maint: 8, desc: 'Papel para la administración, las universidades y los lectores.' },
+  farmacia: { n: 'Laboratorio farmacéutico', cat: 'ind', ic: '💊', owner: 'capitalistas', tech: 's6', cost: 5000, goods: { hierro: 10, herramientas: 15, papel: 10 }, months: 12, max: 30,
+    work: { obreros: 15, burocratas: 3 }, in: { papel: 1, carbon: 1 }, out: { medicinas: 5 }, maint: 12, desc: 'Medicinas para la población y los hospitales.' },
+  electrica: { n: 'Central eléctrica', cat: 'ind', ic: '⚡', owner: 'capitalistas', tech: 'p9', cost: 7000, goods: { hierro: 40, herramientas: 25 }, months: 12, max: 40,
+    work: { obreros: 15 }, in: { carbon: 4 }, out: { electricidad: 12 }, maint: 15, desc: 'Electricidad para hogares y fábricas (+20% producción industrial si hay suministro).' },
+  puerto: { n: 'Puerto', cat: 'serv', ic: '⚓', state: true, cost: 3000, goods: { madera: 40, hierro: 10 }, months: 12, max: 10,
+    work: { obreros: 15 }, in: { madera: 1, carbon: 0.5 }, out: {}, maint: 20, desc: 'Estatal. +20 de capacidad comercial por mercancía y +3 de poder naval por nivel.' },
+  banco: { n: 'Banco', cat: 'serv', ic: '🏦', owner: 'capitalistas', tech: 's1', cost: 4000, goods: { papel: 10, muebles: 10 }, months: 8, max: 20,
+    work: { burocratas: 3 }, in: { papel: 1 }, out: {}, maint: 10, serv: 90, desc: '+60 £/mes de capacidad de inversión por nivel y −0,3% de interés de la deuda. Genera beneficios a los capitalistas.' },
+  universidad: { n: 'Universidad', cat: 'serv', ic: '🎓', state: true, cost: 3500, goods: { papel: 15, muebles: 15 }, months: 12, max: 15,
+    work: { clero: 5, burocratas: 4 }, in: { papel: 2 }, out: {}, maint: 30, desc: 'Estatal. +2,5 puntos de investigación al mes y +2% de alfabetización objetivo por nivel.' },
+  hospital: { n: 'Hospital', cat: 'serv', ic: '🏥', state: true, tech: 's5', cost: 3000, goods: { madera: 15, herramientas: 10, medicinas: 5 }, months: 10, max: 20,
+    work: { burocratas: 3, clero: 4 }, in: { medicinas: 1.5 }, out: {}, maint: 30, desc: 'Estatal. Mejora la salud y reduce la mortalidad.' },
+  arsenal: { n: 'Arsenal', cat: 'serv', ic: '💣', state: true, cost: 4000, goods: { hierro: 30, herramientas: 20 }, months: 10, max: 20,
+    work: { obreros: 15, militares: 2 }, in: { hierro: 1.5, herramientas: 1.5 }, out: {}, maint: 30, desc: 'Estatal. +8 de poder militar por nivel.' },
+};
+const BUILDING_IDS = Object.keys(BUILDINGS);
+const START_BUILDINGS = { granja: 5, hacienda: 3, lujo: 2, aserradero: 2, mina_hierro: 1, mina_carbon: 1, muebles: 2, puerto: 1, universidad: 1, arsenal: 1 };
+
+const GROUP_IDS = ['terratenientes', 'capitalistas', 'obreros', 'campesinos', 'militares', 'clero'];
+const GROUPS = {
+  terratenientes: { n: 'Aristocracia terrateniente', ic: '🏰', color: '#8e5bb5', mem: { terratenientes: 1, burocratas: 0.5 } },
+  capitalistas: { n: 'Burguesía industrial', ic: '🎩', color: '#3f86c6', mem: { capitalistas: 1, artesanos: 0.4, burocratas: 0.5 } },
+  obreros: { n: 'Movimiento obrero', ic: '✊', color: '#c0503a', mem: { obreros: 1, artesanos: 0.6 } },
+  campesinos: { n: 'Liga campesina', ic: '🌾', color: '#6aa84f', mem: { campesinos: 1 } },
+  militares: { n: 'Cuerpo de oficiales', ic: '⚔', color: '#9a8455', mem: { militares: 1 } },
+  clero: { n: 'Iglesia', ic: '⛪', color: '#d8c38a', mem: { clero: 1 } },
+};
+
+// Posturas de cada grupo: [terratenientes, capitalistas, obreros, campesinos, militares, clero]  (-2 .. +2)
+const LAWS = {
+  censo: { n: 'Censo electoral', tip: 'Define quién tiene voz política. Cambia el reparto del poder político entre las clases.', opts: {
+    autocracia: { n: 'Autocracia', d: 'El poder lo tienen las élites: aristocracia, ejército, clero y alta burocracia.', st: [2, -1, -2, -1, 2, 1] },
+    censitario: { n: 'Sufragio censitario', d: 'Votan los ricos: el poder depende de la renta de cada clase.', st: [1, 2, -1, -1, 0, 0] },
+    masculino: { n: 'Sufragio universal masculino', d: 'Vota la mayoría: el poder depende sobre todo del tamaño de cada clase.', tech: 's4', st: [-1, 0, 2, 1, -1, -1] },
+    universal: { n: 'Sufragio universal', d: 'Vota todo el mundo. Las masas dominan la política.', tech: 's8', st: [-2, -1, 2, 2, -1, -1] } } },
+  consumo: { n: 'Impuesto al consumo', tip: 'Recargo sobre todas las compras de la población. Recauda mucho, pero encarece la vida de los pobres.', opts: {
+    ninguno: { n: 'Sin impuesto', d: 'Sin recargo al consumo.', rate: 0, st: [0, 1, 1, 1, 0, 0] },
+    moderado: { n: 'Moderado (6%)', d: 'Recargo del 6% sobre las compras.', rate: 0.06, st: [0, 0, -1, -1, 0, 0] },
+    alto: { n: 'Alto (12%)', d: 'Recargo del 12% sobre las compras.', rate: 0.12, st: [1, -1, -2, -2, 0, 0] } } },
+  laborales: { n: 'Derechos laborales', tip: 'Protección de los trabajadores. Sube los salarios de obreros y artesanos a costa de los beneficios.', opts: {
+    ninguno: { n: 'Sin protección', d: 'Salarios mínimos de mercado. Los trabajadores reciben el 25% de los beneficios extra.', wage: 1, share: 0.25, st: [1, 2, -2, -1, 0, 0] },
+    basica: { n: 'Regulación básica', d: 'Jornada limitada y prohibición del trabajo infantil. Salarios +15% y 35% de los beneficios extra.', wage: 1.15, share: 0.35, st: [0, 0, 1, 0, 0, 1] },
+    sindicatos: { n: 'Sindicatos legales', d: 'Negociación colectiva. Salarios +35%, 50% de los beneficios extra y menos huelgas.', wage: 1.35, share: 0.5, tech: 's7', st: [-1, -2, 2, 1, -1, -1] } } },
+  arancel: { n: 'Política arancelaria', tip: 'Regula el comercio exterior. Las importaciones y exportaciones son automáticas según los precios.', opts: {
+    libre: { n: 'Libre comercio', d: 'Arancel del 3% y +30% de capacidad comercial. Precios cercanos a los mundiales.', tariff: 0.03, open: 1, cap: 1.3, st: [1, -1, 1, 0, 0, 0] },
+    mercantil: { n: 'Mercantilismo', d: 'Arancel del 25%: protege la industria nacional y recauda.', tariff: 0.25, open: 0.6, cap: 1, st: [0, 2, -1, 0, 1, 0] },
+    aislamiento: { n: 'Aislamiento', d: 'Sin comercio exterior. Autarquía total.', tariff: 0, open: 0, cap: 0, st: [-1, 0, -1, 0, 1, 1] } } },
+  iglesia: { n: 'Iglesia y Estado', tip: 'Papel de la religión. Determina el diezmo, el tamaño del clero y quién educa.', opts: {
+    estado: { n: 'Religión de Estado', d: 'Diezmo del 2% de las rentas para el clero. El clero dirige la educación.', tithe: 0.02, clero: 0.009, edu: 1, st: [1, -1, -1, 1, 1, 2] },
+    libertad: { n: 'Libertad de culto', d: 'Diezmo del 1%. Educación mixta (+10% eficacia).', tithe: 0.01, clero: 0.006, edu: 1.1, st: [0, 1, 0, 0, 0, -1] },
+    separacion: { n: 'Separación total', d: 'Diezmo voluntario (0,3%). Educación laica (+20% eficacia).', tithe: 0.003, clero: 0.004, edu: 1.2, tech: 's4', st: [-1, 1, 1, -1, 0, -2] } } },
+};
+const LAW_IDS = Object.keys(LAWS);
+
+const TAX_LEVELS = [
+  { n: 'Nulo', r: 0, pen: 0 }, { n: 'Bajo', r: 0.06, pen: 3 }, { n: 'Medio', r: 0.13, pen: 7 }, { n: 'Alto', r: 0.22, pen: 15 },
+];
+
+const SPEND = {
+  admin:     { n: 'Administración', ic: '📋', base: 1000, def: 50, tip: 'Paga a los burócratas. Mejora la eficiencia fiscal (capacidad de gobernanza) y reduce la corrupción.' },
+  ejercito:  { n: 'Ejército', ic: '⚔', base: 1200, def: 50, tip: 'Paga a los militares y compra ropa, grano y herramientas. Da poder militar, prestigio y reprime a los radicales.' },
+  marina:    { n: 'Marina', ic: '⛵', base: 500, def: 30, tip: 'Compra madera, hierro y carbón. Da poder naval, prestigio y protege el comercio (+capacidad comercial).' },
+  educacion: { n: 'Educación', ic: '📚', base: 600, def: 30, tip: 'Paga a maestros (clero o burócratas) y compra papel. Sube la alfabetización: más investigación y mejor recaudación.' },
+  sanidad:   { n: 'Sanidad', ic: '⚕', base: 400, def: 20, tip: 'Compra medicinas. Reduce la mortalidad y el impacto de las epidemias.' },
+  bienestar: { n: 'Bienestar', ic: '🤝', base: 500, def: 10, tip: 'Transferencias a campesinos, obreros y desempleados. Reduce el radicalismo.' },
+  infra:     { n: 'Infraestructura', ic: '🛤', base: 600, def: 40, tip: 'Caminos y canales. Acelera la construcción y mejora la productividad (hasta +8%).' },
+  corte:     { n: 'Corte', ic: '👑', base: 400, def: 40, tip: 'Fastos y sinecuras. Gusta a terratenientes, clero y militares. Da algo de prestigio.' },
+};
+const SPEND_IDS = Object.keys(SPEND);
+
+const TECHS = {
+  p1: { n: 'Telar mecánico', b: 'prod', cost: 80, req: [], d: 'Desbloquea la Fábrica textil.' },
+  p2: { n: 'Rotación de cultivos', b: 'prod', cost: 120, req: [], d: '+15% de productividad agrícola.' },
+  p3: { n: 'Metalurgia moderna', b: 'prod', cost: 180, req: ['p1'], d: 'Desbloquea la Fábrica de herramientas.' },
+  p7: { n: 'Pulpa química', b: 'prod', cost: 300, req: ['p1'], d: 'Desbloquea la Fábrica de papel.' },
+  p4: { n: 'Máquina de vapor', b: 'prod', cost: 300, req: ['p3'], d: '+15% de productividad en minas e industria.' },
+  p5: { n: 'Ferrocarril', b: 'prod', cost: 500, req: ['p4'], d: '+10% de productividad general, +25% velocidad de construcción, +30% capacidad comercial, +1 obra simultánea.' },
+  p6: { n: 'Proceso Bessemer', b: 'prod', cost: 600, req: ['p4'], d: 'Desbloquea la Acería.' },
+  p8: { n: 'Fertilizantes químicos', b: 'prod', cost: 900, req: ['p2', 'p6'], d: '+25% de productividad agrícola.' },
+  p9: { n: 'Electricidad', b: 'prod', cost: 1100, req: ['p6'], d: 'Desbloquea la Central eléctrica. La electricidad se convierte en una necesidad de confort.' },
+  p10: { n: 'Refinado de petróleo', b: 'prod', cost: 1300, req: ['p9'], d: 'Desbloquea el Pozo petrolero. El petróleo pasa a ser un bien de lujo.' },
+  p11: { n: 'Cadena de montaje', b: 'prod', cost: 1800, req: ['p10'], d: '+30% de productividad industrial.' },
+  s1: { n: 'Banca moderna', b: 'soc', cost: 100, req: [], d: 'Desbloquea el Banco.' },
+  s2: { n: 'Imprenta rotativa', b: 'soc', cost: 150, req: [], d: '+10% de investigación y +5% de alfabetización objetivo.' },
+  s3: { n: 'Economía política', b: 'soc', cost: 280, req: ['s1'], d: '+20% de capacidad administrativa (mejor recaudación).' },
+  s4: { n: 'Pensamiento liberal', b: 'soc', cost: 350, req: ['s2'], d: 'Permite el Sufragio universal masculino y la Separación Iglesia-Estado.' },
+  s5: { n: 'Medicina moderna', b: 'soc', cost: 450, req: ['s2'], d: 'Desbloquea el Hospital. Reduce la mortalidad.' },
+  s6: { n: 'Química orgánica', b: 'soc', cost: 700, req: ['s5'], d: 'Desbloquea el Laboratorio farmacéutico.' },
+  s7: { n: 'Movimiento obrero', b: 'soc', cost: 650, req: ['s4'], d: 'Permite legalizar los Sindicatos.' },
+  s8: { n: 'Estado del bienestar', b: 'soc', cost: 1400, req: ['s7', 's3'], d: 'Permite el Sufragio universal. +50% de eficacia del gasto en bienestar.' },
+  m1: { n: 'Mosquete de percusión', b: 'mil', cost: 100, req: [], d: '+10% de poder militar.' },
+  m2: { n: 'Estado Mayor General', b: 'mil', cost: 280, req: ['m1'], d: '+15% de poder militar y +10 de prestigio.' },
+  m3: { n: 'Buques de vapor', b: 'mil', cost: 450, req: ['m2', 'p4'], d: '+40% de poder naval y +20% de capacidad comercial.' },
+  m4: { n: 'Artillería de retrocarga', b: 'mil', cost: 700, req: ['m2'], d: '+20% de poder militar.' },
+  m5: { n: 'Ametralladora', b: 'mil', cost: 1100, req: ['m4'], d: '+25% de poder militar.' },
+  m6: { n: 'Guerra mecanizada', b: 'mil', cost: 1700, req: ['m5', 'p11'], d: '+30% de poder militar.' },
+};
+const TECH_IDS = Object.keys(TECHS);
+const BRANCHES = { prod: 'Producción', soc: 'Sociedad', mil: 'Militar' };
+
+const POWERS = [
+  { id: 'albrecia', n: 'Reino de Albrecia', color: '#b5453a', gdp: 62000, mil: 40, navy: 40, lit: 0.25, g: 0.017 },
+  { id: 'krovnia', n: 'Imperio de Krovnia', color: '#5c6f8a', gdp: 46000, mil: 48, navy: 12, lit: 0.10, g: 0.013 },
+  { id: 'galmont', n: 'República de Galmont', color: '#3d6fb6', gdp: 52000, mil: 36, navy: 22, lit: 0.22, g: 0.015 },
+  { id: 'austerholm', n: 'Gran Ducado de Austerholm', color: '#c9b04a', gdp: 38000, mil: 32, navy: 6, lit: 0.18, g: 0.012 },
+  { id: 'serenia', n: 'Imperio Sereniano', color: '#7b9a4d', gdp: 34000, mil: 30, navy: 10, lit: 0.06, g: 0.008 },
+  { id: 'nordmark', n: 'Confederación de Nordmark', color: '#8a5a8e', gdp: 18000, mil: 16, navy: 8, lit: 0.20, g: 0.021 },
+];
+
+/* =====================================================================
+   Sección 3: ESTADO DE LA PARTIDA
+   ===================================================================== */
+let S = null;
+
+function newGame() {
+  const s = {
+    ver: 1, month: 0, treasury: 50000, debt: 0, credit: 1, defaultTimer: 0, bankruptMonths: 0, pool: 5000,
+    literacy: 0.12, prestige: 110, eventPrestige: 0, military: 0, navy: 0, tension: 10, stability: 60, health: 0.3,
+    pops: {}, taxes: {}, spend: {}, laws: { censo: 'autocracia', consumo: 'moderado', laborales: 'ninguno', arancel: 'mercantil', iglesia: 'estado' },
+    lawCooldown: 0, bld: {}, queue: [], market: {}, techs: {}, research: { cur: null, prog: {}, bank: 0 }, rp: 0,
+    powers: POWERS.map(p => ({ id: p.id, n: p.n, color: p.color, gdp: p.gdp, mil: p.mil, navy: p.navy, lit: p.lit, g: p.g, techs: 0, prestige: 0, pop: Math.round(p.gdp / 4) })),
+    hist: { gdp: [], pop: [], price: [], sol: [], prestige: [] }, log: [], mods: [], evLast: {}, evOnce: {}, pendingEvent: null, gameOver: null,
+    gdp: 0, refGdpPc: 0, budget: null, power: {}, groupPower: {}, groupSat: {}, jobs: {}, wages: {}, govWork: {}, gdpParts: {},
+  };
+  const taxDef = { terratenientes: 1, capitalistas: 1, artesanos: 2, obreros: 2, campesinos: 2, burocratas: 1, militares: 1, clero: 0 };
+  for (const c of CLASS_IDS) {
+    const cl = CLASSES[c];
+    s.pops[c] = { pop: cl.start, wealth: cl.wealth, income: cl.inc0 * cl.start, net: cl.inc0 * cl.start, spent: 0, sol: 40, sat: 50, radical: 0, taxPaid: 0, unemp: 0, tiers: [1, 0, 0, 0], growth: 0 };
+    s.taxes[c] = taxDef[c];
+  }
+  for (const k of SPEND_IDS) s.spend[k] = SPEND[k].def;
+  for (const g of GOOD_IDS) s.market[g] = { price: GOODS[g].base, world: GOODS[g].base, supply: 0, demand: 0, imp: 0, exp: 0, fill: 1, sold: 1, dPop: 0, dIn: 0, dGov: 0, dCon: 0 };
+  for (const id of BUILDING_IDS) s.bld[id] = { level: START_BUILDINGS[id] || 0, eff: 0, staff: 0, profit: 0, revenue: 0, pm: 1 };
+  S = s;
+  // Asentar precios y rentas antes de empezar (no avanza la fecha)
+  for (let i = 0; i < 8; i++) tick(true);
+  S.treasury = 50000; S.debt = 0; S.pool = 5000; S.bankruptMonths = 0;
+  for (const c of CLASS_IDS) S.pops[c].pop = CLASSES[c].start;
+  S.hist = { gdp: [], pop: [], price: [], sol: [], prestige: [] };
+  S.log = [];
+  S.prestige = prestigeTarget();
+  for (const p of S.powers) p.prestige = powerPrestigeTarget(p);
+  recordHistory();
+  addLog('Enero de 1836: comienza tu gobierno de Valoria. El país es agrario, pobre y conservador. ¡Industrialízalo!', 'info');
+  return S;
+}
+
+/* =====================================================================
+   Sección 4: FUNCIONES AUXILIARES DE LA SIMULACIÓN
+   ===================================================================== */
+const year = () => START_YEAR + Math.floor(S.month / 12);
+const monthOfYear = () => S.month % 12;
+function dateStr(m = S.month) { return MONTH_NAMES[m % 12] + ' de ' + (START_YEAR + Math.floor(m / 12)); }
+function avail(g) { const t = GOODS[g].tech; return !t || !!S.techs[t]; }
+function totalPop() { let t = 0; for (const c of CLASS_IDS) t += S.pops[c].pop; return t; }
+function lvl(id) { return S.bld[id].level; }
+function addLog(msg, type = 'info') { S.log.unshift({ m: S.month, t: msg, type }); if (S.log.length > 200) S.log.length = 200; }
+
+function addMod(key, val, months, cls, label) { S.mods.push({ key, val, months, cls: cls || null, label: label || '' }); }
+function modSum(key, cls) {
+  let t = 0;
+  for (const m of S.mods) if (m.key === key && (m.cls === null || m.cls === cls)) t += m.val;
+  return t;
+}
+
+function prodMult(b) {
+  const t = S.techs; let m = 1;
+  if (b.cat === 'agri') { if (t.p2) m += 0.15; if (t.p8) m += 0.25; }
+  if (b.cat === 'ext') { if (t.p4) m += 0.15; }
+  if (b.cat === 'ind') { if (t.p4) m += 0.15; if (t.p11) m += 0.30; }
+  if (t.p5 && b.cat !== 'serv') m += 0.10;
+  m += S.spend.infra / 100 * 0.08;
+  m *= Math.max(0.2, 1 + modSum('prod_' + b.cat) + modSum('prod'));
+  return m;
+}
+function avgProd() { return (prodMult(BUILDINGS.granja) + prodMult(BUILDINGS.mina_hierro) + prodMult(BUILDINGS.textil)) / 3; }
+
+function militaryTech() { const t = S.techs; return 1 + (t.m1 ? 0.10 : 0) + (t.m2 ? 0.15 : 0) + (t.m4 ? 0.20 : 0) + (t.m5 ? 0.25 : 0) + (t.m6 ? 0.30 : 0); }
+function fund(k) { return S.spend[k] / 100 * (S.bankruptMonths > 0 ? 0.5 : 1); }
+function adminCapacity() { return fund('admin') * (S.techs.s3 ? 1.2 : 1) * (1 + modSum('admin')); }
+function taxEfficiency() { return clamp(0.35 + 0.35 * S.literacy + 0.3 * Math.min(1.2, adminCapacity()) + (S.stability - 50) / 500, 0.2, 0.97); }
+function tradeCap() {
+  const law = LAWS.arancel.opts[S.laws.arancel];
+  let c = (20 + 20 * lvl('puerto') * (S.bld.puerto.staff || 1)) * law.cap;
+  if (S.techs.p5) c *= 1.3;
+  if (S.techs.m3) c *= 1.2;
+  c *= 1 + fund('marina') * 0.3;
+  return c;
+}
+function interestRate() { return Math.max(0.02, 0.04 + 0.06 * (1 - S.credit) - 0.003 * lvl('banco') + (S.defaultTimer > 0 ? 0.03 : 0)); }
+function creditLimit() {
+  const inc = S.budget ? S.budget.income : 2500;
+  return Math.max(0, (inc * 12 * 2 + 10000) * S.credit * (S.defaultTimer > 0 ? 0.3 : 1));
+}
+function spendScale() {
+  const pc = S.refGdpPc > 0 ? (S.gdp / totalPop()) / S.refGdpPc : 1;
+  return clamp(Math.pow(totalPop() / 7210, 0.8) * Math.pow(Math.max(0.3, pc), 0.6), 0.5, 8);
+}
+function constructionSpeed() {
+  let s = 0.5 + fund('infra') * 0.7 + (S.techs.p5 ? 0.25 : 0) + lvl('aceria') * 0.02;
+  if (S.bankruptMonths > 0) s *= 0.3;
+  return s;
+}
+function constructionSlots() { return 2 + Math.floor(S.spend.infra / 25) + (S.techs.p5 ? 1 : 0); }
+function researchPoints() {
+  const u = lvl('universidad') * (S.bld.universidad.staff || 0);
+  return (3 + S.literacy * 12 + u * 2.5) * (S.techs.s2 ? 1.1 : 1) * (1 + modSum('research'));
+}
+function techAvailable(id) { const t = TECHS[id]; return !S.techs[id] && t.req.every(r => S.techs[r]); }
+
+function buildCost(id) {
+  const b = BUILDINGS[id]; let goods = 0;
+  for (const g in b.goods) goods += b.goods[g] * S.market[g].price;
+  return { money: b.cost, goods, total: Math.round(b.cost + goods) };
+}
+function buildingLocked(id) { const b = BUILDINGS[id]; return b.tech && !S.techs[b.tech]; }
+function queuedCount(id) { return S.queue.filter(q => q.id === id).length; }
+function canBuild(id) {
+  const b = BUILDINGS[id];
+  if (b.auto) return { ok: false, why: 'Se ajusta automáticamente.' };
+  if (buildingLocked(id)) return { ok: false, why: 'Requiere la tecnología «' + TECHS[b.tech].n + '».' };
+  if (lvl(id) + queuedCount(id) >= b.max) return { ok: false, why: 'Nivel máximo alcanzado (' + b.max + ').' };
+  const c = buildCost(id);
+  const fromPool = b.state ? 0 : Math.min(S.pool, c.total);
+  const fromTreasury = c.total - fromPool;
+  if (fromTreasury > 0 && S.treasury < fromTreasury) return { ok: false, why: 'Fondos insuficientes: faltan ' + money(fromTreasury - S.treasury) + ' en el tesoro.' };
+  if (S.bankruptMonths > 0 && fromTreasury > 0) return { ok: false, why: 'El Estado está en impago: no puede financiar obras.' };
+  return { ok: true, fromPool, fromTreasury, total: c.total };
+}
+function build(id) {
+  const r = canBuild(id); if (!r.ok) return r;
+  S.pool -= r.fromPool; S.treasury -= r.fromTreasury;
+  S.queue.push({ id, prog: 0 });
+  return r;
+}
+function demolish(id) {
+  if (BUILDINGS[id].auto || lvl(id) <= 0) return false;
+  S.bld[id].level--; addLog('Se ha demolido un nivel de ' + BUILDINGS[id].n + '.', 'info'); return true;
+}
+function cancelQueue(i) {
+  const q = S.queue[i]; if (!q) return;
+  const refund = Math.round(buildCost(q.id).total * 0.5 * (1 - q.prog / BUILDINGS[q.id].months));
+  S.treasury += refund; S.queue.splice(i, 1);
+  addLog('Obra cancelada: ' + BUILDINGS[q.id].n + '. Se recuperan ' + money(refund) + '.', 'info');
+}
+
+/* --- Poder político y grupos de interés --- */
+function computePower() {
+  const law = S.laws.censo, P = S.pops; const w = {};
+  const elite = { terratenientes: 50, capitalistas: 20, clero: 10, militares: 12, burocratas: 10, artesanos: 0.2, obreros: 0.05, campesinos: 0.02 };
+  for (const c of CLASS_IDS) {
+    const pc = Math.max(0.1, P[c].net / Math.max(1, P[c].pop));
+    if (law === 'autocracia') w[c] = P[c].pop * elite[c];
+    else if (law === 'censitario') w[c] = P[c].pop * Math.pow(pc, 1.6);
+    else if (law === 'masculino') w[c] = P[c].pop * Math.pow(pc, 0.4);
+    else w[c] = P[c].pop * Math.pow(pc, 0.12);
+  }
+  const t = sum(Object.values(w)) || 1;
+  for (const c of CLASS_IDS) S.power[c] = w[c] / t;
+  for (const g of GROUP_IDS) {
+    let pw = 0, satW = 0, satS = 0;
+    for (const c in GROUPS[g].mem) {
+      const m = GROUPS[g].mem[c];
+      pw += S.power[c] * m;
+      satW += P[c].pop * m; satS += P[c].pop * m * P[c].sat;
+    }
+    S.groupPower[g] = pw;
+    S.groupSat[g] = satW > 0 ? satS / satW : 50;
+  }
+}
+function lawStanceForClass(c) {
+  let tot = 0, wsum = 0;
+  GROUP_IDS.forEach((g, gi) => {
+    const m = GROUPS[g].mem[c]; if (!m) return;
+    let st = 0; for (const l of LAW_IDS) st += LAWS[l].opts[S.laws[l]].st[gi];
+    tot += st * m; wsum += m;
+  });
+  return wsum > 0 ? tot / wsum : 0;
+}
+function lawSupport(law, opt) {
+  const cur = LAWS[law].opts[S.laws[law]], nw = LAWS[law].opts[opt];
+  let pro = 0, contra = 0;
+  GROUP_IDS.forEach((g, gi) => {
+    const d = nw.st[gi] - cur.st[gi];
+    if (d > 0) pro += S.groupPower[g] * Math.min(2, d); else if (d < 0) contra += S.groupPower[g] * Math.min(2, -d);
+  });
+  return { pro, contra };
+}
+function canEnact(law, opt) {
+  if (S.laws[law] === opt) return { ok: false, why: 'Ya está en vigor.' };
+  const o = LAWS[law].opts[opt];
+  if (o.tech && !S.techs[o.tech]) return { ok: false, why: 'Requiere la tecnología «' + TECHS[o.tech].n + '».' };
+  if (S.lawCooldown > 0) return { ok: false, why: 'El parlamento necesita ' + S.lawCooldown + ' meses más antes de otra reforma.' };
+  const sp = lawSupport(law, opt);
+  if (sp.pro < sp.contra * 0.8) return { ok: false, why: 'Apoyo insuficiente: ' + pct(sp.pro) + ' a favor frente a ' + pct(sp.contra) + ' en contra (ponderado por poder).' };
+  return { ok: true, sp };
+}
+function enactLaw(law, opt, forced) {
+  if (!forced) { const r = canEnact(law, opt); if (!r.ok) return r; }
+  const cur = LAWS[law].opts[S.laws[law]], nw = LAWS[law].opts[opt];
+  GROUP_IDS.forEach((g, gi) => {
+    const d = nw.st[gi] - cur.st[gi];
+    if (d < 0) for (const c in GROUPS[g].mem) addMod('sat', d * 4, 24, c, 'Reforma: ' + nw.n);
+  });
+  S.laws[law] = opt;
+  if (!forced) { S.lawCooldown = 12; S.tension = clamp(S.tension + 3, 0, 100); }
+  addLog('Nueva ley: ' + LAWS[law].n + ' → ' + nw.n + '.', 'law');
+  return { ok: true };
+}
+
+/* --- Préstamos --- */
+function takeLoan(amount) {
+  if (S.debt + amount > creditLimit()) return { ok: false, why: 'Superarías el límite de crédito (' + money(creditLimit()) + ').' };
+  S.debt += amount; S.treasury += amount; addLog('Préstamo de ' + money(amount) + ' al ' + pct(interestRate(), 1) + ' anual.', 'money');
+  return { ok: true };
+}
+function repayLoan(amount) {
+  amount = Math.min(amount, S.debt);
+  if (amount <= 0) return { ok: false, why: 'No hay deuda.' };
+  if (S.treasury < amount) return { ok: false, why: 'Tesoro insuficiente.' };
+  S.debt -= amount; S.treasury -= amount; addLog('Amortizados ' + money(amount) + ' de deuda.', 'money');
+  return { ok: true };
+}
+function declareDefault() {
+  if (S.debt <= 0) return { ok: false, why: 'No hay deuda que repudiar.' };
+  addLog('¡Suspensión de pagos! Se repudian ' + money(S.debt) + ' de deuda. El crédito de Valoria se hunde.', 'bad');
+  S.debt = 0; S.credit = 0.15; S.defaultTimer = 120; S.eventPrestige -= 25; S.pool *= 0.5;
+  if (S.treasury < 0) S.treasury = 0;
+  S.bankruptMonths = 0;
+  addMod('sat', -20, 60, 'capitalistas', 'Suspensión de pagos');
+  addMod('sat', -8, 36, 'terratenientes', 'Suspensión de pagos');
+  S.tension = clamp(S.tension + 8, 0, 100);
+  return { ok: true };
+}
+
+/* =====================================================================
+   Sección 5: TICK MENSUAL
+   Orden: 1 producción · 2 precios · 3 compras y rentas · 4 impuestos ·
+   5 gasto público · 6 sociedad · 7 investigación · 8 eventos · 9 fin
+   ===================================================================== */
+function tick(warm) {
+  if (!warm && (S.gameOver || S.pendingEvent)) return;
+  const ctx = { warm: !!warm };
+  stepProduction(ctx);
+  stepMarket(ctx);
+  stepIncome(ctx);
+  stepTaxes(ctx);
+  stepGovernment(ctx);
+  stepSociety(ctx);
+  if (warm) return;
+  stepResearch(ctx);
+  stepWorld(ctx);
+  stepEvents(ctx);
+  S.month++;
+  recordHistory();
+  stepCheck(ctx);
+}
+
+/* ---------- 1. PRODUCCIÓN ---------- */
+function computeWages(ctx) {
+  const lab = LAWS.laborales.opts[S.laws.laborales].wage;
+  const techW = 1 + (avgProd() - 1) * 0.6;
+  const agriW = 1 + (prodMult(BUILDINGS.granja) - 1) * 0.6;
+  const P = S.pops, jobs = ctx.jobs;
+  const tight = c => 0.85 + 0.3 * clamp(jobs[c] / Math.max(1, P[c].pop), 0, 1);
+  const w = {};
+  w.obreros = WAGE_BASE.obreros * lab * techW * tight('obreros') * (1 + modSum('wage', 'obreros'));
+  w.artesanos = WAGE_BASE.artesanos * lab * techW;
+  w.campesinos = WAGE_BASE.campesinos * agriW * (1 + modSum('wage', 'campesinos'));
+  w.burocratas = WAGE_BASE.burocratas * techW;
+  w.clero = WAGE_BASE.clero * techW;
+  w.militares = WAGE_BASE.militares * techW;
+  w.capitalistas = 0; w.terratenientes = 0;
+  ctx.wage = w; S.wages = w;
+}
+function stepProduction(ctx) {
+  const M = S.market, P = S.pops;
+  ctx.price = {};
+  for (const g of GOOD_IDS) { const m = M[g]; ctx.price[g] = m.price; m.supply = 0; m.dIn = 0; m.dPop = 0; m.dGov = 0; m.dCon = 0; }
+  // Empleo
+  const jobs = {}; for (const c of CLASS_IDS) jobs[c] = 0;
+  for (const id of BUILDING_IDS) {
+    const b = BUILDINGS[id], lv = lvl(id); if (!lv || b.auto) continue;
+    for (const c in b.work) jobs[c] += b.work[c] * lv;
+  }
+  const er = {}; for (const c of CLASS_IDS) er[c] = jobs[c] > 0 ? Math.min(1, P[c].pop / jobs[c]) : 1;
+  ctx.jobs = jobs; ctx.er = er; S.jobs = jobs;
+  computeWages(ctx);
+  // Edificios
+  ctx.rec = {};
+  for (const id of BUILDING_IDS) {
+    const b = BUILDINGS[id], lv = lvl(id), B = S.bld[id];
+    if (b.auto) continue;
+    if (!lv) { B.eff = 0; B.staff = 0; B.profit = 0; B.revenue = 0; continue; }
+    let staff = 1; for (const c in b.work) staff = Math.min(staff, er[c]);
+    let inF = 1; for (const g in b.in) inF = Math.min(inF, M[g].fill);
+    const pm = prodMult(b);
+    let eb = 0;
+    if (b.cat === 'ind' && S.techs.p9) { M.electricidad.dIn += 0.6 * lv * staff * inF; eb = 0.2 * M.electricidad.fill; }
+    const eff = staff * inF;
+    const ins = {}, outs = {};
+    for (const g in b.in) { ins[g] = b.in[g] * lv * eff; M[g].dIn += ins[g]; }
+    for (const g in b.out) { outs[g] = b.out[g] * lv * eff * pm * (1 + eb); M[g].supply += outs[g]; }
+    if (b.cat === 'ind' && S.techs.p9) ins.electricidad = 0.6 * lv * staff * inF;
+    B.eff = eff; B.staff = staff; B.pm = pm * (1 + eb); B.inF = inF;
+    ctx.rec[id] = { ins, outs, staff, eff };
+  }
+  // Subsistencia
+  const campEmp = Math.min(P.campesinos.pop, jobs.campesinos);
+  const sub = Math.max(0, P.campesinos.pop - campEmp);
+  const pmA = 1 + (prodMult(BUILDINGS.granja) - 1) * 0.5;
+  ctx.sub = { pop: sub, grano: sub * 0.13 * pmA, madera: sub * 0.025 * pmA };
+  M.grano.supply += ctx.sub.grano; M.madera.supply += ctx.sub.madera;
+  S.bld.subsistencia.level = Math.ceil(sub / 40); S.bld.subsistencia.eff = 1; S.bld.subsistencia.staff = 1; S.bld.subsistencia.pm = pmA;
+  // Artesanos por cuenta propia
+  const artFree = Math.max(0, P.artesanos.pop - jobs.artesanos * er.artesanos);
+  const artF = Math.min(M.madera.fill, M.grano.fill);
+  const apm = 1 + (S.techs.p4 ? 0.05 : 0);
+  ctx.art = { pop: artFree, ins: { madera: 0.03 * artFree * artF, grano: 0.04 * artFree * artF },
+    outs: { ropa: 0.10 * artFree * artF * apm, muebles: 0.03 * artFree * artF * apm, herramientas: 0.02 * artFree * artF * apm } };
+  for (const g in ctx.art.ins) M[g].dIn += ctx.art.ins[g];
+  for (const g in ctx.art.outs) M[g].supply += ctx.art.outs[g];
+  // Desempleo
+  for (const c of CLASS_IDS) P[c].unemp = 0;
+  P.obreros.unemp = Math.max(0, P.obreros.pop - jobs.obreros);
+}
+
+/* ---------- 2. MERCADO Y PRECIOS ---------- */
+function govGoodsPlan(ctx) {
+  const sc = spendScale(), M = S.market, pr = ctx.price; const q = {};
+  const add = (g, value) => { if (avail(g)) q[g] = (q[g] || 0) + value / pr[g]; };
+  const E = k => SPEND[k].base * S.spend[k] / 100 * sc;
+  add('papel', E('admin') * 0.2);
+  add('ropa', E('ejercito') * 0.35 * 0.4); add('herramientas', E('ejercito') * 0.35 * 0.3); add('grano', E('ejercito') * 0.35 * 0.3);
+  add('madera', E('marina') * 0.6 * 0.4); add('hierro', E('marina') * 0.6 * 0.3); add('carbon', E('marina') * 0.6 * 0.3);
+  add('papel', E('educacion') * 0.3);
+  add('medicinas', E('sanidad') * 0.5);
+  add('madera', E('infra') * 0.5 * 0.4); add('hierro', E('infra') * 0.5 * 0.3); add('carbon', E('infra') * 0.5 * 0.3);
+  add('lujo', E('corte') * 0.2);
+  ctx.govGoods = q;
+  for (const g in q) M[g].dGov += q[g];
+}
+function stepMarket(ctx) {
+  const M = S.market, P = S.pops, pr = ctx.price;
+  const ctax = LAWS.consumo.opts[S.laws.consumo].rate; ctx.ctax = ctax;
+  // Demanda de la población por jerarquía de necesidades
+  ctx.pd = {};
+  for (const c of CLASS_IDS) {
+    const p = P[c], cl = CLASSES[c];
+    let budget = Math.max(0, p.net * (1 - cl.save) + p.wealth * 0.03);
+    const tiers = [];
+    for (const t of NEEDS) {
+      let cost = 0; const q = {}, full = {};
+      for (const g in t.g) { if (!avail(g)) continue; full[g] = t.g[g] * cl.mult * p.pop; cost += full[g] * pr[g] * (1 + ctax); }
+      const frac = cost > 0 ? Math.min(1, budget / cost) : 0;
+      budget -= cost * frac;
+      for (const g in full) { q[g] = full[g] * frac; M[g].dPop += q[g]; }
+      tiers.push({ frac, q, full });
+    }
+    // Gasto suntuario: lo que sobra tras cubrir todas las necesidades se gasta en parte en bienes caros
+    if (budget > 0 && tiers[3].frac >= 0.999) {
+      const extra = budget * 0.6, q = {};
+      for (const g in OPULENCE) if (avail(g)) { q[g] = extra * OPULENCE[g] / (pr[g] * (1 + ctax)); M[g].dPop += q[g]; }
+      tiers.push({ frac: 1, q, full: {}, opulence: true });
+    }
+    ctx.pd[c] = tiers;
+  }
+  govGoodsPlan(ctx);
+  // Construcción
+  const slots = constructionSlots();
+  S.queue.forEach((it, i) => {
+    if (i >= slots) return; const b = BUILDINGS[it.id];
+    for (const g in b.goods) if (avail(g)) M[g].dCon += b.goods[g] / b.months;
+  });
+  // Comercio exterior y precios
+  const law = LAWS.arancel.opts[S.laws.arancel], cap = tradeCap();
+  ctx.tariffRev = 0; ctx.tradeVol = 0; ctx.impVal = 0; ctx.expVal = 0;
+  for (const g of GOOD_IDS) {
+    const m = M[g], base = GOODS[g].base;
+    if (!avail(g)) { m.fill = 1; m.sold = 1; m.imp = 0; m.exp = 0; m.demand = 0; continue; }
+    const D = m.dPop + m.dIn + m.dGov + m.dCon, Sp = m.supply;
+    m.demand = D;
+    let imp = 0, exp = 0;
+    const tradeable = !GOODS[g].notrade && law.open > 0;
+    if (tradeable) {
+      if (D > Sp && m.price >= m.world * (1 + law.tariff) * 0.95) imp = Math.min(cap, D - Sp);
+      else if (Sp > D && m.price <= m.world * 1.05) exp = Math.min(cap, Sp - D);
+    }
+    m.imp = imp; m.exp = exp;
+    m.fill = D > 0 ? Math.min(1, (Sp + imp) / D) : 1;
+    m.sold = Sp > 0 ? Math.min(1, (D - imp + exp) / Sp) : 1;
+    const eps = base * 0.02;
+    const ratio = (D + exp + eps) / (Sp + imp + eps);
+    let np = m.price * Math.pow(clamp(ratio, 0.5, 2), 0.3);
+    if (tradeable && (imp > 0 || exp > 0)) {
+      const target = imp > 0 ? m.world * (1 + law.tariff) : m.world;
+      np += (target - np) * 0.2 * law.open;
+    }
+    m.price = clamp(np, base * 0.35, base * 5);
+    ctx.tariffRev += imp * m.world * law.tariff;
+    ctx.impVal += imp * m.world; ctx.expVal += exp * m.world;
+    ctx.tradeVol += (imp + exp) * m.world;
+  }
+}
+
+/* ---------- 3. COMPRAS DE LA POBLACIÓN Y REPARTO DE RENTAS ---------- */
+function stepIncome(ctx) {
+  const M = S.market, P = S.pops, pr = ctx.price, w = ctx.wage;
+  const inc = {}; for (const c of CLASS_IDS) inc[c] = 0;
+  let gdp = 0; ctx.stateBld = 0; const parts = { agri: 0, ext: 0, ind: 0, serv: 0, subs: 0, art: 0, gov: 0 };
+  // Compras: consumo efectivo según disponibilidad
+  ctx.spent = {}; ctx.ctaxBase = 0;
+  for (const c of CLASS_IDS) {
+    let spent = 0;
+    for (const t of ctx.pd[c]) for (const g in t.q) spent += t.q[g] * M[g].fill * pr[g] * (1 + ctx.ctax);
+    ctx.spent[c] = spent; ctx.ctaxBase += spent;
+  }
+  // Edificios
+  for (const id of BUILDING_IDS) {
+    const b = BUILDINGS[id], r = ctx.rec[id], B = S.bld[id]; if (!r) continue;
+    const lv = lvl(id);
+    let revenue = 0, inputCost = 0;
+    for (const g in r.outs) revenue += r.outs[g] * pr[g] * M[g].sold;
+    for (const g in r.ins) inputCost += r.ins[g] * pr[g];
+    if (b.serv) revenue += b.serv * lv * r.eff * (1 + (avgProd() - 1) * 0.5);
+    let wagesDue = 0; const wd = {};
+    for (const c in b.work) { wd[c] = b.work[c] * lv * r.staff * w[c]; wagesDue += wd[c]; }
+    const maint = b.maint * lv;
+    if (b.state) {
+      const cost = wagesDue + inputCost + maint;
+      for (const c in wd) inc[c] += wd[c];
+      ctx.stateBld += cost; B.profit = -cost; B.revenue = 0;
+      parts.gov += wagesDue;
+      gdp += wagesDue;
+    } else {
+      const va = revenue - inputCost - maint;
+      let paid = wagesDue;
+      if (va < wagesDue) paid = Math.max(0, va);
+      const k = wagesDue > 0 ? paid / wagesDue : 0;
+      for (const c in wd) inc[c] += wd[c] * k;
+      // Reparto de beneficios: parte del excedente sube los salarios
+      let bonus = 0;
+      if (va > wagesDue && wagesDue > 0) {
+        bonus = (va - wagesDue) * LAWS.laborales.opts[S.laws.laborales].share;
+        for (const c in wd) inc[c] += bonus * wd[c] / wagesDue;
+      }
+      const profit = va - paid - bonus;
+      inc[b.owner] += profit;
+      B.wagePer = 0; { let wk = 0; for (const c in b.work) wk += b.work[c] * lv * r.staff; B.wagePer = wk > 0 ? (paid + bonus) / wk : 0; }
+      B.profit = profit; B.revenue = revenue; B.wageCut = 1 - k;
+      gdp += Math.max(0, revenue - inputCost); parts[b.cat] += Math.max(0, revenue - inputCost);
+    }
+  }
+  // Subsistencia (15% de renta para los terratenientes)
+  const sv = ctx.sub.grano * pr.grano * M.grano.sold + ctx.sub.madera * pr.madera * M.madera.sold;
+  inc.campesinos += sv * 0.85; inc.terratenientes += sv * 0.15; gdp += sv; parts.subs = sv;
+  // Artesanos
+  let av = 0; for (const g in ctx.art.outs) av += ctx.art.outs[g] * pr[g] * M[g].sold;
+  for (const g in ctx.art.ins) av -= ctx.art.ins[g] * pr[g];
+  inc.artesanos += av; gdp += Math.max(0, av); parts.art = av;
+  // Comerciantes
+  inc.capitalistas += ctx.tradeVol * 0.04;
+  ctx.inc = inc; ctx.gdp = gdp; ctx.parts = parts;
+}
+
+/* ---------- 4. RECAUDACIÓN ---------- */
+function stepTaxes(ctx) {
+  const P = S.pops, eff = taxEfficiency(); ctx.taxEff = eff;
+  ctx.net = {}; ctx.taxByClass = {}; let total = 0;
+  for (const c of CLASS_IDS) {
+    const g = ctx.inc[c];
+    const t = Math.max(0, g) * TAX_LEVELS[S.taxes[c]].r * eff;
+    ctx.taxByClass[c] = t; total += t;
+    P[c].income = g; P[c].taxPaid = t;
+    ctx.net[c] = g - t;
+  }
+  ctx.incomeTax = total;
+  ctx.ctaxRev = ctx.ctaxBase * ctx.ctax / (1 + ctx.ctax) * eff;
+  // Diezmo
+  const tr = LAWS.iglesia.opts[S.laws.iglesia].tithe; let tithe = 0;
+  for (const c of CLASS_IDS) if (c !== 'clero' && ctx.net[c] > 0) { const t = ctx.net[c] * tr; ctx.net[c] -= t; tithe += t; }
+  ctx.net.clero += tithe; ctx.tithe = tithe;
+}
+
+/* ---------- 5. GASTO PÚBLICO ---------- */
+function stepGovernment(ctx) {
+  const P = S.pops, net = ctx.net, sc = spendScale();
+  const exp = {}; for (const k of SPEND_IDS) exp[k] = SPEND[k].base * S.spend[k] / 100 * sc;
+  const sep = S.laws.iglesia === 'separacion';
+  const teach = sep ? 'burocratas' : 'clero';
+  net.burocratas += exp.admin * 0.8;
+  net.militares += exp.ejercito * 0.65 + exp.marina * 0.4;
+  if (S.laws.iglesia === 'libertad') { net.clero += exp.educacion * 0.35; net.burocratas += exp.educacion * 0.35; }
+  else net[teach] += exp.educacion * 0.7;
+  net[teach] += exp.sanidad * 0.5;
+  net.obreros += exp.infra * 0.5;
+  net.terratenientes += exp.corte * 0.6; net.clero += exp.corte * 0.2;
+  // Bienestar
+  const wmult = S.techs.s8 ? 1.5 : 1;
+  const wb = P.campesinos.pop + P.obreros.pop + P.obreros.unemp * 2 + P.artesanos.pop * 0.5;
+  if (wb > 0) {
+    const wv = exp.bienestar * wmult;
+    net.campesinos += wv * P.campesinos.pop / wb;
+    net.obreros += wv * (P.obreros.pop + P.obreros.unemp * 2) / wb;
+    net.artesanos += wv * P.artesanos.pop * 0.5 / wb;
+  }
+  const payroll = exp.admin * 0.8 + exp.ejercito * 0.65 + exp.marina * 0.4 + exp.educacion * 0.7 + exp.sanidad * 0.5 + exp.infra * 0.5;
+  ctx.parts.gov += payroll; ctx.gdp += payroll;
+  // Balance
+  const interest = S.debt * interestRate() / 12;
+  const income = ctx.incomeTax + ctx.ctaxRev + ctx.tariffRev;
+  const spendTotal = sum(Object.values(exp));
+  const expenses = spendTotal + ctx.stateBld + interest;
+  S.budget = { income, expenses, balance: income - expenses, incomeTax: ctx.incomeTax, ctax: ctx.ctaxRev, tariff: ctx.tariffRev, exp, stateBld: ctx.stateBld, interest, taxByClass: ctx.taxByClass, taxEff: ctx.taxEff, tithe: ctx.tithe };
+  if (!ctx.warm) {
+    S.treasury += income - expenses;
+    if (S.treasury < 0) {
+      const need = -S.treasury, room = Math.max(0, creditLimit() - S.debt);
+      const b = Math.min(need, room);
+      if (b > 0) { S.debt += b; S.treasury += b; }
+      if (S.treasury < 0) {
+        S.bankruptMonths++;
+        if (S.bankruptMonths === 1) addLog('¡El Estado no puede pagar sus gastos! Estamos en impago. Recorta gastos, sube impuestos o suspende pagos. 24 meses así significan la bancarrota.', 'bad');
+      } else S.bankruptMonths = 0;
+    } else S.bankruptMonths = 0;
+  }
+  // Rentas netas finales, ahorro e inversión privada
+  for (const c of CLASS_IDS) {
+    const p = P[c];
+    p.net = net[c];
+    p.spent = ctx.spent[c];
+    let sav = p.net - p.spent;
+    if (!ctx.warm) {
+      if (sav > 0 && c === 'capitalistas') { S.pool += sav * 0.7; sav *= 0.3; }
+      else if (sav > 0 && c === 'terratenientes') { S.pool += sav * 0.25; sav *= 0.75; }
+      p.wealth = Math.max(0, p.wealth + sav);
+    }
+  }
+  if (!ctx.warm) S.pool += 60 * lvl('banco') * (S.bld.banco.staff || 0);
+  S.gdp = ctx.gdp; S.gdpParts = ctx.parts;
+  if (!S.refGdpPc && !ctx.warm) S.refGdpPc = ctx.gdp / totalPop();
+  if (ctx.warm) S.refGdpPc = ctx.gdp / totalPop();
+}
+
+/* ---------- 6. NIVEL DE VIDA, DESCONTENTO Y POBLACIÓN ---------- */
+function stepSociety(ctx) {
+  const P = S.pops, M = S.market;
+  const health = clamp(0.12 + 0.35 * fund('sanidad') + 0.03 * lvl('hospital') * (S.bld.hospital.staff || 0) + (S.techs.s5 ? 0.12 : 0) + 0.1 * (avail('medicinas') ? M.medicinas.fill * Math.min(1, M.medicinas.dPop / (totalPop() * 0.012)) : 0), 0, 1);
+  S.health = health;
+  const f = {}; for (const k of SPEND_IDS) f[k] = fund(k);
+  const separ = S.laws.iglesia === 'separacion';
+  let solSum = 0, popSum = 0;
+  for (const c of CLASS_IDS) {
+    const p = P[c], cl = CLASSES[c];
+    // Nivel de vida
+    let sol = 0; const tiersSat = [];
+    ctx.pd[c].forEach((t, i) => {
+      if (t.opulence) return;
+      let got = 0, val = 0;
+      for (const g in t.full) { val += t.full[g] * ctx.price[g]; got += t.q[g] * M[g].fill * ctx.price[g]; }
+      const s = val > 0 ? got / val : 1;
+      tiersSat.push(s); sol += NEEDS[i].w * s;
+    });
+    p.tiers = tiersSat;
+    p.sol = ctx.warm ? sol : p.sol * 0.5 + sol * 0.5;
+    // Satisfacción
+    const expv = cl.exp + S.literacy * 20;
+    let target = 50 + (p.sol - expv) * 1.3 - TAX_LEVELS[S.taxes[c]].pen + lawStanceForClass(c) * 1.5;
+    if (c === 'terratenientes') target += (f.corte - 0.4) * 15;
+    if (c === 'clero') target += (f.corte - 0.4) * 8 + (separ ? 0 : (f.educacion - 0.3) * 8);
+    if (c === 'militares') target += (f.corte - 0.4) * 5 + (f.ejercito - 0.5) * 25;
+    if (c === 'burocratas') target += (f.admin - 0.5) * 15;
+    if (c === 'campesinos' || c === 'obreros') target += f.bienestar * 12;
+    if (c === 'obreros') target -= (p.unemp / Math.max(1, p.pop)) * 40;
+    if (S.bankruptMonths > 0) target -= 10;
+    target += modSum('sat', c);
+    target = clamp(target, 0, 100);
+    p.sat = ctx.warm ? target : p.sat + (target - p.sat) * 0.2;
+    p.radical = clamp((40 - p.sat) / 40, 0, 1);
+    solSum += p.sol * p.pop; popSum += p.pop;
+  }
+  S.avgSol = solSum / popSum;
+  computePower();
+  if (ctx.warm) return;
+
+  // Crecimiento natural
+  for (const c of CLASS_IDS) {
+    const p = P[c], cl = CLASSES[c];
+    const deaths = 0.030 - 0.012 * health + Math.max(0, 30 - p.sol) * 0.0012 + modSum('mort');
+    const births = cl.birth * (1 - 0.25 * S.literacy);
+    let r = (births - deaths) / 12;
+    if (p.tiers[0] < 0.6) r -= (0.6 - p.tiers[0]) * 0.02;
+    const before = p.pop;
+    p.pop = Math.max(1, p.pop * (1 + r));
+    p.growth = p.pop - before;
+  }
+  // Migración
+  const tp = totalPop();
+  let mig = 0;
+  if (S.avgSol > 42) mig = (S.avgSol - 42) * 0.0003 * tp / 12 * (1 + modSum('immig'));
+  else if (S.avgSol < 30) mig = -(30 - S.avgSol) * 0.0004 * tp / 12;
+  if (mig > 0) { P.campesinos.pop += mig * 0.55; P.obreros.pop += mig * 0.35; P.artesanos.pop += mig * 0.1; }
+  else if (mig < 0) { P.campesinos.pop = Math.max(1, P.campesinos.pop + mig * 0.7); P.obreros.pop = Math.max(1, P.obreros.pop + mig * 0.3); }
+  S.migration = mig;
+  // Movilidad social
+  const jobs = S.jobs;
+  const move = (from, to, n) => { n = Math.min(n, P[from].pop * 0.05); if (n <= 0) return; P[from].pop -= n; P[to].pop += n; };
+  const obrGap = jobs.obreros - P.obreros.pop;
+  if (obrGap > 0) {
+    move('campesinos', 'obreros', Math.min(obrGap * 0.06, P.campesinos.pop * 0.006));
+    const artInc = P.artesanos.income / Math.max(1, P.artesanos.pop);
+    if (artInc < S.wages.obreros * 0.9) move('artesanos', 'obreros', Math.min(obrGap * 0.04, P.artesanos.pop * 0.006));
+  } else if (P.obreros.unemp > P.obreros.pop * 0.03) move('obreros', 'campesinos', P.obreros.unemp * 0.03);
+  const artInc = P.artesanos.income / Math.max(1, P.artesanos.pop), campInc = P.campesinos.income / Math.max(1, P.campesinos.pop);
+  if (artInc > campInc * 1.6) move('campesinos', 'artesanos', P.campesinos.pop * 0.0004);
+  else if (artInc < campInc * 1.05) move('artesanos', 'campesinos', P.artesanos.pop * 0.003);
+  const toward = (c, target, src) => {
+    const gap = target - P[c].pop;
+    if (gap > 0) move(src, c, gap * 0.03); else if (gap < 0) move(c, 'campesinos', -gap * 0.03);
+  };
+  let ind = 0, agr = 0;
+  for (const id of BUILDING_IDS) { const b = BUILDINGS[id]; if (b.owner === 'capitalistas') ind += lvl(id); if (b.owner === 'terratenientes') agr += lvl(id); }
+  toward('capitalistas', 5 + ind * 0.6, 'artesanos');
+  toward('terratenientes', 0.005 * P.campesinos.pop + agr * 0.4, 'campesinos');
+  toward('burocratas', 15 + S.spend.admin / 100 * tp * 0.008 + jobs.burocratas, 'artesanos');
+  toward('militares', 10 + S.spend.ejercito / 100 * tp * 0.012 + jobs.militares, 'campesinos');
+  toward('clero', LAWS.iglesia.opts[S.laws.iglesia].clero * tp + jobs.clero, 'campesinos');
+
+  // Alfabetización
+  const edu = LAWS.iglesia.opts[S.laws.iglesia].edu;
+  const litT = clamp(0.06 + 0.5 * f.educacion * edu + 0.02 * lvl('universidad') * (S.bld.universidad.staff || 0) + (S.techs.s2 ? 0.05 : 0), 0, 0.98);
+  S.literacy += (litT - S.literacy) * 0.004;
+  S.litTarget = litT;
+
+  // Poder militar y naval
+  S.military = ((P.militares.pop / 60) * 15 * (0.3 + 0.7 * f.ejercito) + lvl('arsenal') * 8 * (S.bld.arsenal.staff || 0)) * militaryTech() * (1 + modSum('mil'));
+  S.navy = (f.marina * 20 + lvl('puerto') * 3) * (S.techs.m3 ? 1.4 : 1);
+
+  // Estabilidad y tensión revolucionaria
+  let st = 0; for (const c of CLASS_IDS) st += S.power[c] * P[c].sat;
+  let rad = 0; for (const c of CLASS_IDS) rad += P[c].radical * P[c].pop; rad /= tp;
+  S.radicals = rad;
+  S.stability = clamp(st * 0.7 + (1 - rad) * 30 - S.tension * 0.15, 0, 100);
+  const milLoyal = P.militares.sat > 35 ? 1 : 0.3;
+  const suppression = Math.min(1.5, S.military / 60) * 0.6 * milLoyal;
+  let d = (rad * 100 - 15) / 10 - suppression - f.bienestar * 0.5 + modSum('tension');
+  if (d < 0) d *= 1.5;
+  S.tension = clamp(S.tension + d, 0, 100);
+  S.tensionDelta = d;
+
+  // Golpe de estado
+  if (P.militares.sat < 25 && S.tension > 30 && S.groupPower.militares > 0.05 && rand() < 0.04 && !S.pendingEvent) {
+    S.pendingEvent = { id: 'golpe' };
+  }
+  // Prestigio
+  S.prestige += (prestigeTarget() - S.prestige) * 0.05;
+  if (S.lawCooldown > 0) S.lawCooldown--;
+  if (S.defaultTimer > 0) S.defaultTimer--; else S.credit += (1 - S.credit) * 0.01;
+}
+function prestigeTarget() {
+  let n = 0; for (const t in S.techs) n++;
+  return S.gdp / 300 + S.military * 0.6 + S.navy * 0.4 + S.literacy * 40 + n * 3 + (S.techs.m2 ? 10 : 0) + S.eventPrestige + fund('corte') * 10;
+}
+function powerPrestigeTarget(p) { return p.gdp / 300 + p.mil * 0.6 + p.navy * 0.4 + p.lit * 40 + p.techs * 3; }
+
+/* ---------- 7. INVESTIGACIÓN ---------- */
+function stepResearch() {
+  const rp = researchPoints(); S.rp = rp;
+  const R = S.research;
+  if (!R.cur || S.techs[R.cur]) { R.cur = null; R.bank = Math.min(150, R.bank + rp); return; }
+  let add = rp; if (R.bank > 0) { add += R.bank; R.bank = 0; }
+  R.prog[R.cur] = (R.prog[R.cur] || 0) + add;
+  if (R.prog[R.cur] >= TECHS[R.cur].cost) {
+    const t = TECHS[R.cur];
+    R.bank = Math.min(150, R.prog[R.cur] - t.cost);
+    S.techs[R.cur] = true;
+    addLog('Investigación completada: ' + t.n + '. ' + t.d, 'tech');
+    R.cur = null;
+  }
+}
+
+/* ---------- Mundo: precios mundiales, potencias, construcción, modificadores ---------- */
+function stepWorld() {
+  const yrs = (S.month) / 12;
+  for (const g of GOOD_IDS) {
+    const m = S.market[g], base = GOODS[g].base;
+    const trend = base * (1 + (GOODS[g].trend || 0) * clamp(yrs / 70, 0, 1)) * (1 + modSum('world'));
+    m.world *= 1 + (rand() - 0.5) * 0.05;
+    m.world += (trend - m.world) * 0.06;
+    m.world = clamp(m.world, base * 0.3, base * 3);
+  }
+  // Potencias rivales
+  for (const p of S.powers) {
+    p.g = clamp(p.g + (rand() - 0.5) * 0.0008, 0.005, 0.022);
+    p.gdp *= 1 + p.g / 12 + (rand() - 0.5) * 0.004;
+    p.mil *= 1 + (p.g * 0.9) / 12 + (rand() - 0.5) * 0.003;
+    p.navy *= 1 + (p.g * 0.8) / 12;
+    p.lit = Math.min(0.95, p.lit + (0.9 - p.lit) * 0.0025);
+    p.techs = Math.min(25, p.techs + 0.021 * (1 + p.lit));
+    p.pop *= 1 + 0.009 / 12;
+    p.prestige += (powerPrestigeTarget(p) - p.prestige) * 0.05;
+  }
+  // Construcción
+  const slots = constructionSlots(), sp = constructionSpeed();
+  for (let i = 0; i < Math.min(slots, S.queue.length); i++) S.queue[i].prog += sp;
+  for (let i = S.queue.length - 1; i >= 0; i--) {
+    const q = S.queue[i];
+    if (q.prog >= BUILDINGS[q.id].months) {
+      S.bld[q.id].level++; S.queue.splice(i, 1);
+      addLog('Obra terminada: ' + BUILDINGS[q.id].n + ' (nivel ' + lvl(q.id) + ').', 'build');
+    }
+  }
+  // Modificadores temporales
+  for (const m of S.mods) m.months--;
+  S.mods = S.mods.filter(m => m.months > 0);
+}
+function recordHistory() {
+  const H = S.hist; let pi = 0, wsum = 0;
+  for (const g of GOOD_IDS) if (avail(g)) { const w = S.market[g].demand + 1; pi += S.market[g].price / GOODS[g].base * w; wsum += w; }
+  H.gdp.push(Math.round(S.gdp * 12));
+  H.pop.push(Math.round(totalPop()));
+  H.price.push(+(pi / wsum * 100).toFixed(1));
+  H.sol.push(+(S.avgSol || 0).toFixed(1));
+  H.prestige.push(Math.round(S.prestige));
+}
+function powerRanking() {
+  const list = S.powers.map(p => ({ id: p.id, n: p.n, color: p.color, prestige: p.prestige, gdp: p.gdp, mil: p.mil, navy: p.navy, lit: p.lit, pop: p.pop, me: false }));
+  list.push({ id: 'valoria', n: 'Valoria', color: '#c9a227', prestige: S.prestige, gdp: S.gdp, mil: S.military, navy: S.navy, lit: S.literacy, pop: totalPop(), me: true });
+  list.sort((a, b) => b.prestige - a.prestige);
+  return list;
+}
+function myRank() { return powerRanking().findIndex(p => p.me) + 1; }
+
+/* =====================================================================
+   Sección 6: EVENTOS
+   ===================================================================== */
+function scaleMoney(v) { return Math.round(v * spendScale()); }
+function popLoss(frac, classes) { for (const c of (classes || CLASS_IDS)) S.pops[c].pop *= (1 - frac); }
+function satAll(v, months, label) { for (const c of CLASS_IDS) addMod('sat', v, months, c, label); }
+function pay(v) { S.treasury -= v; }
+
+const EVENTS = {
+  mala_cosecha: { t: 'Mala cosecha', ic: '🌧',
+    cond: () => monthOfYear() >= 6 && monthOfYear() <= 8, p: 0.035, cd: 36,
+    txt: 'Las lluvias torrenciales del verano han podrido el grano en los campos. Los precios del pan se disparan y en las aldeas se teme el invierno.',
+    opts: [
+      { t: 'Importar grano con fondos públicos', tip: () => 'Cuesta ' + money(scaleMoney(3000)) + '. Producción agrícola −15% durante 4 meses.', fx: () => { pay(scaleMoney(3000)); addMod('prod_agri', -0.15, 4, null, 'Mala cosecha'); } },
+      { t: 'Que el mercado lo resuelva', tip: 'Producción agrícola −30% durante 6 meses. Campesinos −8 de satisfacción.', fx: () => { addMod('prod_agri', -0.3, 6, null, 'Mala cosecha'); addMod('sat', -8, 12, 'campesinos', 'Mala cosecha'); } },
+      { t: 'Pedir a la Iglesia que organice la caridad', tip: 'Producción agrícola −30% durante 6 meses. Clero +6 de satisfacción. Muere el 0,5% de los campesinos.', fx: () => { addMod('prod_agri', -0.3, 6, null, 'Mala cosecha'); addMod('sat', 6, 18, 'clero', 'Caridad'); popLoss(0.005, ['campesinos']); } },
+    ] },
+  colera: { t: 'Epidemia de cólera', ic: '☠',
+    cond: () => year() >= 1840, p: () => 0.008 * (1.4 - S.health), cd: 120,
+    txt: 'El cólera se extiende por los barrios pobres de las ciudades y los puertos. Los médicos discuten si la causa son los miasmas o el agua.',
+    opts: [
+      { t: 'Cuarentena estricta', tip: () => 'Cuesta ' + money(scaleMoney(3000)) + '. Muere el 0,6% de la población. Producción −10% durante 3 meses.', fx: () => { pay(scaleMoney(3000)); popLoss(0.006); addMod('prod', -0.1, 3, null, 'Cuarentena'); } },
+      { t: 'Construir alcantarillado moderno', tip: () => 'Cuesta ' + money(scaleMoney(9000)) + '. Muere el 1%. Mortalidad reducida durante 20 años.', fx: () => { pay(scaleMoney(9000)); popLoss(0.01); addMod('mort', -0.003, 240, null, 'Alcantarillado'); } },
+      { t: 'Rezar y esperar', tip: 'Muere el 2,5% de la población. Clero +8 de satisfacción.', fx: () => { popLoss(0.025); addMod('sat', 8, 24, 'clero', 'Rogativas'); } },
+    ] },
+  crisis_financiera: { t: 'Crisis financiera', ic: '📉',
+    cond: () => year() >= 1845 && (lvl('banco') > 0 || S.pool > 15000), p: 0.008, cd: 180,
+    txt: 'Una ola de especulación ha estallado. Los bancos cierran sus ventanillas y los inversores retiran su dinero en pánico.',
+    opts: [
+      { t: 'Rescatar a los bancos', tip: () => 'Cuesta ' + money(scaleMoney(8000)) + '. Capitalistas +10. Se conserva la inversión privada.', fx: () => { pay(scaleMoney(8000)); addMod('sat', 10, 24, 'capitalistas', 'Rescate'); addMod('sat', -6, 24, 'obreros', 'Rescate a banqueros'); } },
+      { t: 'Dejar que quiebren', tip: 'La inversión privada se reduce un 60%. Industria −10% durante un año. Capitalistas −15.', fx: () => { S.pool *= 0.4; addMod('prod_ind', -0.1, 12, null, 'Crisis'); addMod('sat', -15, 24, 'capitalistas', 'Quiebras'); } },
+    ] },
+  huelga_general: { t: 'Huelga general', ic: '✊',
+    cond: () => S.pops.obreros.pop > 350 && S.pops.obreros.sat < 40, p: () => S.laws.laborales === 'sindicatos' ? 0.015 : 0.05, cd: 48,
+    txt: 'Los obreros de las fábricas y las minas han parado el país. Exigen mejores salarios y jornadas más cortas.',
+    opts: [
+      { t: 'Conceder subidas salariales', tip: 'Salarios obreros +15% durante 2 años. Obreros +15, capitalistas −8.', fx: () => { addMod('wage', 0.15, 24, 'obreros', 'Acuerdo salarial'); addMod('sat', 15, 24, 'obreros', 'Huelga ganada'); addMod('sat', -8, 24, 'capitalistas', 'Concesiones'); } },
+      { t: 'Reprimir con el ejército', tip: 'Si el ejército es fuerte: obreros −10, tensión +6. Si es débil: tensión +15.', fx: () => { if (S.military > 40) { addMod('sat', -10, 24, 'obreros', 'Represión'); addMod('sat', 5, 12, 'militares', 'Orden'); S.tension += 6; } else { S.tension += 15; addMod('sat', -15, 24, 'obreros', 'Represión fallida'); } } },
+      { t: 'Negociar con fondos públicos', tip: () => 'Cuesta ' + money(scaleMoney(2500)) + '. Obreros +6. Industria −10% durante 6 meses.', fx: () => { pay(scaleMoney(2500)); addMod('sat', 6, 18, 'obreros', 'Negociación'); addMod('prod_ind', -0.1, 6, null, 'Huelga'); } },
+    ] },
+  fiebre_oro: { t: 'Fiebre del oro', ic: '💰',
+    cond: () => year() >= 1840, p: 0.003, once: true,
+    txt: 'Unos buscadores han encontrado oro en los Montes Grises. Miles de aventureros llegan desde todo el continente.',
+    opts: [
+      { t: 'Monopolio estatal del oro', tip: () => 'Tesoro +' + money(scaleMoney(15000)) + '. Capitalistas −5.', fx: () => { S.treasury += scaleMoney(15000); addMod('sat', -5, 24, 'capitalistas', 'Monopolio'); } },
+      { t: 'Libre explotación', tip: () => 'Inversión privada +' + money(scaleMoney(15000)) + '. Llegan 120.000 inmigrantes. Capitalistas +6.', fx: () => { S.pool += scaleMoney(15000); S.pops.obreros.pop += 80; S.pops.campesinos.pop += 40; addMod('sat', 6, 24, 'capitalistas', 'Fiebre del oro'); } },
+    ] },
+  sufragio: { t: 'Demanda de sufragio', ic: '🗳',
+    cond: () => (S.laws.censo === 'autocracia' || S.laws.censo === 'censitario') && S.literacy > 0.3, p: 0.015, cd: 120,
+    txt: 'Miles de firmas llegan al parlamento exigiendo ampliar el derecho de voto. Los periódicos hablan de "soberanía nacional".',
+    opts: [
+      { t: 'Ampliar el sufragio', tip: 'Cambia el censo electoral al siguiente nivel disponible. Tensión −10. Terratenientes −10.', fx: () => { const nxt = S.laws.censo === 'autocracia' ? 'censitario' : (S.techs.s4 ? 'masculino' : null); if (nxt) enactLaw('censo', nxt, true); S.tension = Math.max(0, S.tension - 10); addMod('sat', -10, 24, 'terratenientes', 'Ampliación del sufragio'); } },
+      { t: 'Rechazar la petición', tip: 'Tensión +8. Obreros y campesinos −8.', fx: () => { S.tension += 8; addMod('sat', -8, 24, 'obreros', 'Sufragio negado'); addMod('sat', -8, 24, 'campesinos', 'Sufragio negado'); } },
+    ] },
+  primavera: { t: 'La primavera de los pueblos', ic: '🔥',
+    cond: () => year() === 1848, p: 0.25, once: true,
+    txt: 'Una oleada revolucionaria recorre el continente. En la capital aparecen barricadas y los estudiantes cantan himnos liberales.',
+    opts: [
+      { t: 'Reformas liberales', tip: 'El censo pasa a ser censitario (o más amplio). Tensión −15, prestigio +5. Terratenientes y militares −10.', fx: () => { if (S.laws.censo === 'autocracia') enactLaw('censo', 'censitario', true); S.tension = Math.max(0, S.tension - 15); S.eventPrestige += 5; addMod('sat', -10, 36, 'terratenientes', 'Reformas de 1848'); addMod('sat', -10, 36, 'militares', 'Reformas de 1848'); } },
+      { t: 'Aplastar la revuelta', tip: 'Tensión +5 (o +15 con un ejército débil). Militares +10, obreros −12.', fx: () => { S.tension += S.military > 40 ? 5 : 15; addMod('sat', 10, 24, 'militares', 'Represión de 1848'); addMod('sat', -12, 36, 'obreros', 'Represión de 1848'); } },
+      { t: 'Concesiones menores', tip: () => 'Cuesta ' + money(scaleMoney(5000)) + '. Tensión −5.', fx: () => { pay(scaleMoney(5000)); S.tension = Math.max(0, S.tension - 5); } },
+    ] },
+  boom_ferroviario: { t: 'Boom ferroviario', ic: '🚂',
+    cond: () => !!S.techs.p5, p: 0.04, once: true,
+    txt: 'Todo el mundo quiere invertir en ferrocarriles. Las acciones de las compañías se disparan y el país se llena de vías.',
+    opts: [
+      { t: 'Subvencionar las líneas', tip: () => 'Cuesta ' + money(scaleMoney(8000)) + '. Inversión privada +' + money(scaleMoney(20000)) + '. Productividad +8% durante 5 años.', fx: () => { pay(scaleMoney(8000)); S.pool += scaleMoney(20000); addMod('prod', 0.08, 60, null, 'Boom ferroviario'); } },
+      { t: 'Dejarlo al sector privado', tip: () => 'Inversión privada +' + money(scaleMoney(10000)) + '. Capitalistas +5.', fx: () => { S.pool += scaleMoney(10000); addMod('sat', 5, 24, 'capitalistas', 'Boom ferroviario'); } },
+    ] },
+  inventor: { t: 'Un inventor local', ic: '💡',
+    cond: () => !!S.research.cur, p: 0.008, cd: 60,
+    txt: 'Un joven ingeniero de la capital presenta un invento prometedor y pide financiación al gobierno.',
+    opts: [
+      { t: 'Financiar su trabajo', tip: () => 'Cuesta ' + money(scaleMoney(1500)) + '. +30% del coste de la investigación actual.', fx: () => { pay(scaleMoney(1500)); const c = S.research.cur; if (c) S.research.prog[c] = (S.research.prog[c] || 0) + TECHS[c].cost * 0.3; } },
+      { t: 'No hay dinero para sueños', tip: 'Nada ocurre.', fx: () => {} },
+    ] },
+  corrupcion: { t: 'Escándalo de corrupción', ic: '🕵',
+    cond: () => S.spend.admin < 40, p: 0.02, cd: 60,
+    txt: 'La prensa destapa una red de funcionarios que desviaba fondos públicos. El tesoro ha perdido una suma considerable.',
+    opts: [
+      { t: 'Purgar la administración', tip: () => 'Tesoro −' + money(Math.max(0, S.treasury * 0.05)) + '. Burócratas −12. Administración +10% eficacia 3 años.', fx: () => { S.treasury -= Math.max(0, S.treasury * 0.05); addMod('sat', -12, 24, 'burocratas', 'Purga'); addMod('admin', 0.1, 36, null, 'Purga'); } },
+      { t: 'Echar tierra sobre el asunto', tip: () => 'Tesoro −' + money(Math.max(0, S.treasury * 0.1)) + '. Prestigio −5. Tensión +3.', fx: () => { S.treasury -= Math.max(0, S.treasury * 0.1); S.eventPrestige -= 5; S.tension += 3; } },
+    ] },
+  sequia: { t: 'Gran sequía', ic: '☀',
+    cond: () => monthOfYear() >= 4 && monthOfYear() <= 7, p: 0.01, cd: 60,
+    txt: 'No ha llovido en meses. Los ríos bajan secos y el ganado muere de sed.',
+    opts: [
+      { t: 'Obras de regadío', tip: () => 'Cuesta ' + money(scaleMoney(5000)) + '. Agricultura −10% durante 6 meses, pero +5% durante 20 años.', fx: () => { pay(scaleMoney(5000)); addMod('prod_agri', -0.1, 6, null, 'Sequía'); addMod('prod_agri', 0.05, 240, null, 'Regadíos'); } },
+      { t: 'Esperar a que llueva', tip: 'Agricultura −25% durante 6 meses.', fx: () => { addMod('prod_agri', -0.25, 6, null, 'Sequía'); } },
+    ] },
+  migracion: { t: 'Oleada migratoria', ic: '🧳',
+    cond: () => S.avgSol > 45, p: 0.015, cd: 48,
+    txt: 'Miles de familias de países vecinos llaman a nuestras puertas atraídas por la prosperidad de Valoria.',
+    opts: [
+      { t: 'Abrir las fronteras', tip: 'La población crece un 3% (campesinos y obreros). Obreros −4 (competencia por empleos).', fx: () => { S.pops.campesinos.pop *= 1.03; S.pops.obreros.pop *= 1.05; addMod('sat', -4, 12, 'obreros', 'Inmigración'); } },
+      { t: 'Restringir la entrada', tip: 'Obreros +3. Capitalistas −5 (quieren mano de obra barata).', fx: () => { addMod('sat', 3, 12, 'obreros', 'Restricción'); addMod('sat', -5, 12, 'capitalistas', 'Restricción'); } },
+    ] },
+  exposicion: { t: 'Exposición universal', ic: '🏛',
+    cond: () => year() >= 1851 && S.gdp > 35000, p: 0.01, once: true,
+    txt: 'Valoria tiene la ocasión de organizar una gran exposición internacional para mostrar sus progresos al mundo.',
+    opts: [
+      { t: 'Organizarla a lo grande', tip: () => 'Cuesta ' + money(scaleMoney(10000)) + '. Prestigio +25. Capitalistas +5.', fx: () => { pay(scaleMoney(10000)); S.eventPrestige += 25; addMod('sat', 5, 24, 'capitalistas', 'Exposición'); } },
+      { t: 'Declinar la invitación', tip: 'Prestigio −3.', fx: () => { S.eventPrestige -= 3; } },
+    ] },
+  frontera: { t: 'Disputa fronteriza', ic: '⚔',
+    cond: () => year() >= 1840, p: 0.007, cd: 120,
+    txt: () => 'Nuestro vecino, ' + S.powers[Math.floor(S.month / 7) % S.powers.length].n + ', reclama un valle fronterizo rico en pastos. Sus tropas se concentran en la frontera.',
+    opts: [
+      { t: 'Guerra breve', tip: () => 'Éxito probable si el poder militar (' + fmt(S.military) + ') supera ~' + fmt(warThreshold()) + '. Victoria: prestigio +20, tesoro +' + money(scaleMoney(5000)) + '. Derrota: prestigio −20 y tensión +10.', fx: () => {
+        const win = rand() < clamp(S.military / warThreshold() * 0.6, 0.1, 0.92);
+        popLoss(0.15, ['militares']);
+        if (win) { S.eventPrestige += 20; S.treasury += scaleMoney(5000); addMod('sat', 10, 24, 'militares', 'Victoria'); satAll(4, 12, 'Victoria'); addLog('¡Victoria! Nuestras tropas han ganado la guerra fronteriza.', 'good'); }
+        else { S.eventPrestige -= 20; S.tension += 10; addMod('sat', -10, 24, 'militares', 'Derrota'); addLog('Derrota humillante en la frontera.', 'bad'); }
+      } },
+      { t: 'Negociación diplomática', tip: () => 'Cuesta ' + money(scaleMoney(4000)) + '. Prestigio −3.', fx: () => { pay(scaleMoney(4000)); S.eventPrestige -= 3; } },
+      { t: 'Ceder el valle', tip: 'Prestigio −12. Militares −15.', fx: () => { S.eventPrestige -= 12; addMod('sat', -15, 36, 'militares', 'Humillación'); } },
+    ] },
+  petroleo: { t: 'Descubrimiento de petróleo', ic: '🛢',
+    cond: () => !!S.techs.p10, p: 0.04, once: true,
+    txt: 'Los geólogos confirman grandes yacimientos de petróleo en la Llanura de Sena.',
+    opts: [
+      { t: 'Concesión a compañías extranjeras', tip: () => 'Tesoro +' + money(scaleMoney(12000)) + '.', fx: () => { S.treasury += scaleMoney(12000); } },
+      { t: 'Compañía nacional', tip: 'Se construyen 2 pozos petroleros gratis. Capitalistas +5.', fx: () => { S.bld.pozo.level = Math.min(BUILDINGS.pozo.max, lvl('pozo') + 2); addMod('sat', 5, 24, 'capitalistas', 'Petróleo nacional'); } },
+    ] },
+  depresion: { t: 'La Gran Depresión', ic: '🏚',
+    cond: () => year() >= 1929 && year() <= 1931, p: 0.2, once: true,
+    txt: 'La bolsa de Albrecia se ha hundido. El comercio mundial se desploma y el paro se extiende por todo el mundo.',
+    opts: [
+      { t: 'Austeridad', tip: 'Precios mundiales −30% durante 3 años. Inversión privada −50%. Tensión +6.', fx: () => { addMod('world', -0.3, 36, null, 'Depresión'); S.pool *= 0.5; S.tension += 6; } },
+      { t: 'Grandes obras públicas', tip: () => 'Cuesta ' + money(scaleMoney(15000)) + '. Precios mundiales −30% durante 3 años. Productividad +5%. Obreros +10.', fx: () => { pay(scaleMoney(15000)); addMod('world', -0.3, 36, null, 'Depresión'); addMod('prod', 0.05, 36, null, 'Obras públicas'); addMod('sat', 10, 36, 'obreros', 'Obras públicas'); } },
+    ] },
+  revuelta_campesina: { t: 'Revuelta campesina', ic: '🔱',
+    cond: () => S.pops.campesinos.sat < 30, p: 0.06, cd: 48,
+    txt: 'Los campesinos han quemado varios cortijos y se niegan a pagar las rentas. Exigen tierra y pan.',
+    opts: [
+      { t: 'Reforma agraria', tip: 'Campesinos +20 durante 3 años. Terratenientes −20 y pierden la mitad de su riqueza.', fx: () => { addMod('sat', 20, 36, 'campesinos', 'Reforma agraria'); addMod('sat', -20, 36, 'terratenientes', 'Reforma agraria'); S.pops.terratenientes.wealth *= 0.5; } },
+      { t: 'Bajar los impuestos rurales', tip: 'El impuesto a campesinos baja un nivel. Campesinos +8.', fx: () => { S.taxes.campesinos = Math.max(0, S.taxes.campesinos - 1); addMod('sat', 8, 24, 'campesinos', 'Rebaja fiscal'); } },
+      { t: 'Enviar a la Guardia', tip: 'Tensión +6. Campesinos −10. Terratenientes +5.', fx: () => { S.tension += 6; addMod('sat', -10, 24, 'campesinos', 'Represión'); addMod('sat', 5, 24, 'terratenientes', 'Orden'); } },
+    ] },
+  iglesia: { t: 'Conflicto con la Iglesia', ic: '⛪',
+    cond: () => S.laws.iglesia !== 'estado' && S.pops.clero.sat < 40, p: 0.02, cd: 120,
+    txt: 'El arzobispo de Valoria condena desde el púlpito las leyes del gobierno y llama a los fieles a la desobediencia.',
+    opts: [
+      { t: 'Firmar un concordato', tip: () => 'Cuesta ' + money(scaleMoney(2500)) + '. Clero +15. Capitalistas −4.', fx: () => { pay(scaleMoney(2500)); addMod('sat', 15, 36, 'clero', 'Concordato'); addMod('sat', -4, 24, 'capitalistas', 'Concordato'); } },
+      { t: 'Mantenerse firme', tip: 'Clero −10. Tensión +3.', fx: () => { addMod('sat', -10, 36, 'clero', 'Anticlericalismo'); S.tension += 3; } },
+    ] },
+  expedicion: { t: 'Expedición científica', ic: '🧭',
+    cond: () => year() >= 1850, p: 0.007, cd: 120,
+    txt: 'La Real Sociedad Geográfica propone una expedición a las tierras inexploradas del sur.',
+    opts: [
+      { t: 'Financiar la expedición', tip: () => 'Cuesta ' + money(scaleMoney(5000)) + '. Prestigio +10. +100 puntos de investigación.', fx: () => { pay(scaleMoney(5000)); S.eventPrestige += 10; S.research.bank = (S.research.bank || 0) + 100; } },
+      { t: 'Rechazarla', tip: 'Nada ocurre.', fx: () => {} },
+    ] },
+  boda_real: { t: 'Boda real', ic: '💍',
+    cond: () => true, p: 0.004, cd: 240,
+    txt: 'El heredero al trono se casa con una princesa extranjera. La corte espera una celebración a la altura.',
+    opts: [
+      { t: 'Gran celebración', tip: () => 'Cuesta ' + money(scaleMoney(6000)) + '. Prestigio +8. Terratenientes +8. Tensión −5.', fx: () => { pay(scaleMoney(6000)); S.eventPrestige += 8; addMod('sat', 8, 24, 'terratenientes', 'Boda real'); S.tension = Math.max(0, S.tension - 5); } },
+      { t: 'Ceremonia austera', tip: 'Prestigio +2. Terratenientes −3.', fx: () => { S.eventPrestige += 2; addMod('sat', -3, 12, 'terratenientes', 'Boda austera'); } },
+    ] },
+  guerra_extranjera: { t: 'Guerra entre potencias', ic: '💥',
+    cond: () => year() >= 1850, p: 0.005, cd: 120,
+    txt: 'Dos grandes potencias han entrado en guerra. Los precios mundiales suben y ambos bandos buscan aliados y suministros.',
+    opts: [
+      { t: 'Vender armas a ambos bandos', tip: () => 'Tesoro +' + money(scaleMoney(8000)) + '. Prestigio −5. Precios mundiales +20% 2 años.', fx: () => { S.treasury += scaleMoney(8000); S.eventPrestige -= 5; addMod('world', 0.2, 24, null, 'Guerra extranjera'); } },
+      { t: 'Neutralidad estricta', tip: 'Prestigio +3. Precios mundiales +20% durante 2 años.', fx: () => { S.eventPrestige += 3; addMod('world', 0.2, 24, null, 'Guerra extranjera'); } },
+      { t: 'Unirse a la coalición', tip: () => 'Riesgo militar. Con poder militar alto (≥ ' + fmt(warThreshold()) + '): prestigio +15. Si no: prestigio −10.', fx: () => { addMod('world', 0.2, 24, null, 'Guerra extranjera'); popLoss(0.1, ['militares']); if (S.military >= warThreshold() * 0.9 || rand() < 0.3) { S.eventPrestige += 15; addLog('La coalición vence y Valoria gana prestigio.', 'good'); } else { S.eventPrestige -= 10; S.tension += 5; addLog('Nuestras tropas sufren graves reveses.', 'bad'); } } },
+    ] },
+  plaga_patata: { t: 'Plaga en los cultivos', ic: '🥀',
+    cond: () => year() >= 1845 && year() <= 1850, p: 0.04, once: true,
+    txt: 'Un hongo desconocido pudre las cosechas. En las regiones más pobres comienza el hambre.',
+    opts: [
+      { t: 'Ayuda alimentaria', tip: () => 'Cuesta ' + money(scaleMoney(5000)) + '. Agricultura −20% un año. Muere el 0,5% de los campesinos.', fx: () => { pay(scaleMoney(5000)); addMod('prod_agri', -0.2, 12, null, 'Plaga'); popLoss(0.005, ['campesinos']); } },
+      { t: 'Laissez-faire', tip: 'Agricultura −25% un año. Muere el 2% de los campesinos. Campesinos −10.', fx: () => { addMod('prod_agri', -0.25, 12, null, 'Plaga'); popLoss(0.02, ['campesinos']); addMod('sat', -10, 36, 'campesinos', 'Abandono'); } },
+    ] },
+  bonanza: { t: 'Bonanza comercial', ic: '⛵',
+    cond: () => S.laws.arancel !== 'aislamiento' && lvl('puerto') >= 2, p: 0.012, cd: 60,
+    txt: 'Nuestros comerciantes han abierto nuevas rutas en ultramar y los barcos vuelven cargados de beneficios.',
+    opts: [
+      { t: 'Gravar los beneficios', tip: () => 'Tesoro +' + money(scaleMoney(4000)) + '. Capitalistas −4.', fx: () => { S.treasury += scaleMoney(4000); addMod('sat', -4, 12, 'capitalistas', 'Impuesto especial'); } },
+      { t: 'Que reinviertan', tip: () => 'Inversión privada +' + money(scaleMoney(6000)) + '. Capitalistas +4.', fx: () => { S.pool += scaleMoney(6000); addMod('sat', 4, 12, 'capitalistas', 'Bonanza'); } },
+    ] },
+  sociedad_obrera: { t: 'Nace la Internacional', ic: '🚩',
+    cond: () => year() >= 1864 && S.pops.obreros.pop > 600, p: 0.03, once: true,
+    txt: 'Los obreros de Valoria se adhieren a una asociación internacional de trabajadores. Sus panfletos hablan de revolución.',
+    opts: [
+      { t: 'Tolerarla', tip: 'Obreros +6. Capitalistas −6. Tensión +3.', fx: () => { addMod('sat', 6, 36, 'obreros', 'Tolerancia'); addMod('sat', -6, 36, 'capitalistas', 'Tolerancia'); S.tension += 3; } },
+      { t: 'Ilegalizarla', tip: 'Obreros −8. Capitalistas +4. Tensión +5.', fx: () => { addMod('sat', -8, 36, 'obreros', 'Ilegalización'); addMod('sat', 4, 24, 'capitalistas', 'Ilegalización'); S.tension += 5; } },
+    ] },
+  golpe: { t: 'Golpe de Estado', ic: '🎖', forced: true,
+    cond: () => false, p: 0,
+    txt: 'Un grupo de generales descontentos ha rodeado el palacio de gobierno. Imponen un gobierno militar que restaura el orden a su manera.',
+    opts: [
+      { t: 'Aceptar el nuevo gobierno', tip: 'Censo → Autocracia. Ejército al 80% y corte al 60%. Tesoro −20%. Tensión −25. Prestigio −10.', fx: () => {
+        if (S.laws.censo !== 'autocracia') enactLaw('censo', 'autocracia', true);
+        S.spend.ejercito = 80; S.spend.corte = 60; S.treasury = S.treasury > 0 ? S.treasury * 0.8 : S.treasury;
+        S.tension = Math.max(0, S.tension - 25); S.eventPrestige -= 10;
+        addMod('sat', 25, 36, 'militares', 'Junta militar'); addMod('sat', -10, 36, 'obreros', 'Junta militar'); addMod('sat', -6, 36, 'capitalistas', 'Junta militar');
+        addLog('Golpe de Estado: una junta militar toma el control y fuerza cambios en el gobierno.', 'bad');
+      } },
+    ] },
+};
+function warThreshold() { const r = powerRanking().filter(p => !p.me); return sum(r.map(p => p.mil)) / r.length; }
+
+function stepEvents() {
+  if (S.pendingEvent) return;
+  if (S.month < 6) return;
+  const ids = Object.keys(EVENTS);
+  // orden aleatorio para no favorecer siempre al primero
+  for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+  for (const id of ids) {
+    const e = EVENTS[id];
+    if (e.forced) continue;
+    if (e.once && S.evOnce[id]) continue;
+    if (S.evLast[id] !== undefined && S.month - S.evLast[id] < (e.cd || 120)) continue;
+    let ok = false; try { ok = e.cond(); } catch (err) { ok = false; }
+    if (!ok) continue;
+    const p = typeof e.p === 'function' ? e.p() : e.p;
+    if (rand() < p) {
+      S.pendingEvent = { id };
+      S.evLast[id] = S.month; if (e.once) S.evOnce[id] = true;
+      return;
+    }
+  }
+}
+function eventText(id) { const e = EVENTS[id]; return typeof e.txt === 'function' ? e.txt() : e.txt; }
+function eventTip(o) { return typeof o.tip === 'function' ? o.tip() : o.tip; }
+function resolveEvent(i) {
+  const pe = S.pendingEvent; if (!pe) return;
+  const e = EVENTS[pe.id], o = e.opts[i] || e.opts[0];
+  o.fx();
+  S.tension = clamp(S.tension, 0, 100);
+  addLog(e.t + ': ' + o.t + '.', 'event');
+  S.pendingEvent = null;
+}
+
+/* =====================================================================
+   Sección 7: VICTORIA Y DERROTA
+   ===================================================================== */
+function scoreBreakdown() {
+  const prestige = Math.round(S.prestige);
+  const gdp = Math.round(S.gdp * 12 / 5000);
+  const sol = Math.round((S.avgSol || 0) * 10);
+  return { prestige, gdp, sol, total: prestige + gdp + sol };
+}
+function stepCheck() {
+  if (S.tension >= 100) { S.gameOver = { type: 'revolucion', score: scoreBreakdown(), rank: myRank() }; addLog('¡Revolución! El gobierno ha caído.', 'bad'); return; }
+  if (S.bankruptMonths >= 24) { S.gameOver = { type: 'bancarrota', score: scoreBreakdown(), rank: myRank() }; addLog('Bancarrota: el Estado ha colapsado.', 'bad'); return; }
+  if (S.bankruptMonths === 12) addLog('Llevamos 12 meses en impago. ¡Quedan 12 para la bancarrota total!', 'bad');
+  if (S.tension >= 80 && S.tensionDelta > 0 && S.month % 6 === 0) addLog('La tensión revolucionaria es crítica (' + fmt(S.tension) + '%). ¡Actúa ya!', 'bad');
+  if (S.month >= TOTAL_MONTHS) { S.gameOver = { type: 'fin', score: scoreBreakdown(), rank: myRank() }; addLog('Diciembre de 1936: termina tu mandato.', 'info'); }
+}
+
+
+
+/* =====================================================================
+   Sección 8: INTERFAZ — utilidades
+   ===================================================================== */
+const UI = { tab: 'resumen', speed: 0, prevSpeed: 1, timer: null, mouseDown: false, modal: null, ecoFilter: 'todos' };
+const SPEEDS = [0, 1400, 700, 320];
+const $ = (sel) => document.querySelector(sel);
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function tip(html) { return ' data-tip="' + esc(html) + '"'; }
+function bar(frac, cls = '', mark) {
+  const w = clamp(frac, 0, 1) * 100;
+  return '<div class="bar ' + cls + '"><i style="width:' + w.toFixed(1) + '%"></i>' + (mark !== undefined ? '<span class="mark" style="left:' + (clamp(mark, 0, 1) * 100).toFixed(1) + '%"></span>' : '') + '</div>';
+}
+function signed(n, suffix = ' £') { const c = n > 0.5 ? 'pos' : n < -0.5 ? 'neg' : 'muted'; return '<span class="' + c + '">' + (n > 0 ? '+' : '') + fmtK(n) + suffix + '</span>'; }
+function satClass(v) { return v >= 60 ? 'pos' : v >= 40 ? 'gold' : v >= 25 ? 'warn' : 'neg'; }
+function satBarCls(v) { return v >= 60 ? 'green' : v >= 35 ? '' : 'red'; }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => { t.style.display = 'none'; }, 2200); }
+function netPC(c) { const p = S.pops[c]; return p.net / Math.max(1, p.pop); }
+
+/* =====================================================================
+   Sección 9: BARRA SUPERIOR
+   ===================================================================== */
+function renderTop() {
+  const b = S.budget || { income: 0, expenses: 0, balance: 0 };
+  const rank = myRank();
+  const sp = ['⏸', '▶', '▶▶', '▶▶▶'];
+  const spTip = ['Pausa (Espacio)', 'Velocidad normal: 1 mes cada 1,4 s (tecla 1)', 'Velocidad rápida (tecla 2)', 'Velocidad muy rápida (tecla 3)'];
+  const curName = S.research.cur ? TECHS[S.research.cur].n : 'ninguna';
+  const stabCls = S.stability >= 60 ? 'pos' : S.stability >= 40 ? 'gold' : 'neg';
+  $('#top').innerHTML =
+    '<div class="brand">Valoria<small>1836 — 1936</small></div>' +
+    '<div class="stat date"' + tip('<b>Fecha</b><br>Cada turno es un mes. La partida termina en diciembre de 1936.<br>Meses restantes: ' + (TOTAL_MONTHS - S.month)) + '><span class="l">Fecha</span><span class="v">' + dateStr() + '</span></div>' +
+    '<div class="speed">' + sp.map((s, i) => '<button data-act="speed" data-arg="' + i + '" class="' + (UI.speed === i ? 'on' : '') + '"' + tip(spTip[i]) + '>' + s + '</button>').join('') + '</div>' +
+    '<div class="stat"' + tip('<b>Tesoro público</b><br>Dinero del Estado para construir edificios estatales, cubrir déficits y responder a eventos.' + (S.bankruptMonths > 0 ? '<br><span class="neg">¡IMPAGO desde hace ' + S.bankruptMonths + ' meses! A los 24, bancarrota.</span>' : '')) + '><span class="l">Tesoro</span><span class="v ' + (S.treasury < 0 ? 'neg' : '') + '">' + money(S.treasury) + '</span></div>' +
+    '<div class="stat"' + tip('<b>Balance mensual</b><br>Ingresos: ' + money(b.income) + '<br>Gastos: ' + money(b.expenses) + '<br>Detalle en la pestaña Presupuesto.') + '><span class="l">Ingresos / Gastos</span><span class="v"><span class="pos">' + fmtK(b.income) + '</span> / <span class="neg">' + fmtK(b.expenses) + '</span> (' + signed(b.balance, '') + ')</span></div>' +
+    '<div class="stat"' + tip('<b>Capacidad de inversión privada</b><br>Riqueza no gastada de capitalistas y terratenientes (y crédito de los bancos). Se usa <b>primero</b> para pagar edificios privados; lo que falte sale del tesoro.') + '><span class="l">Inversión privada</span><span class="v">' + money(S.pool) + '</span></div>' +
+    '<div class="stat"' + tip('<b>Investigación</b><br>Puntos al mes: base 3 + alfabetización + universidades.<br>Investigando: ' + esc(curName)) + '><span class="l">Investigación</span><span class="v">' + fmt(S.rp || researchPoints(), 1) + '/mes' + (S.research.cur ? '' : ' <span class="warn">⚠</span>') + '</span></div>' +
+    '<div class="stat"' + tip('<b>Prestigio</b><br>Sube con el PNB, el poder militar y naval, la alfabetización, las tecnologías y los éxitos en eventos. Determina tu puesto entre las 7 potencias.') + '><span class="l">Prestigio</span><span class="v">' + fmt(S.prestige) + ' <span class="gold">(' + rank + 'º)</span></span></div>' +
+    '<div class="stat"' + tip('<b>Estabilidad</b>: ' + fmt(S.stability) + '/100<br>Satisfacción media ponderada por poder político.<br><b>Tensión revolucionaria</b>: ' + fmt(S.tension) + '% (' + (S.tensionDelta >= 0 ? '+' : '') + fmt(S.tensionDelta || 0, 1) + '/mes)<br>Si llega al 100%, estalla la revolución y pierdes.') + '><span class="l">Estabilidad · Tensión</span><span class="v"><span class="' + stabCls + '">' + fmt(S.stability) + '</span> · <span class="' + (S.tension > 60 ? 'neg' : S.tension > 30 ? 'warn' : 'muted') + '">' + fmt(S.tension) + '%</span></span></div>' +
+    '<div class="spacer"></div>' +
+    '<button class="btn" data-act="savemenu"' + tip('Guardar partida (3 ranuras)') + '>💾 Guardar</button>' +
+    '<button class="btn" data-act="loadmenu"' + tip('Cargar partida') + '>📂 Cargar</button>' +
+    '<button class="btn" data-act="help"' + tip('Cómo jugar') + '>❓ Ayuda</button>';
+}
+
+/* =====================================================================
+   Sección 10: PESTAÑAS
+   ===================================================================== */
+const TABS = [
+  { id: 'resumen', n: 'Resumen', ic: '🗺' },
+  { id: 'economia', n: 'Economía', ic: '⚖' },
+  { id: 'poblacion', n: 'Población', ic: '👥' },
+  { id: 'politica', n: 'Política', ic: '🏛' },
+  { id: 'investigacion', n: 'Investigación', ic: '🔬' },
+  { id: 'presupuesto', n: 'Presupuesto', ic: '💰' },
+  { id: 'potencias', n: 'Grandes Potencias', ic: '🌍' },
+  { id: 'eventos', n: 'Crónica', ic: '📰' },
+];
+function renderTabs() {
+  const badges = { investigacion: S.research.cur ? 0 : 1, presupuesto: S.budget && S.budget.balance < 0 ? 1 : 0, politica: S.tension > 50 ? 1 : 0 };
+  $('#tabs').innerHTML = TABS.map(t => '<button data-act="tab" data-arg="' + t.id + '" class="' + (UI.tab === t.id ? 'on' : '') + '"><span class="ic">' + t.ic + '</span><span class="lbl">' + t.n + '</span>' + (badges[t.id] ? '<span class="badge">!</span>' : '') + '</button>').join('') +
+    '<div class="foot">Atajos: <b>Espacio</b> pausa · <b>1-3</b> velocidad.<br>Pasa el ratón por encima de cualquier dato para ver su explicación.</div>';
+}
+function renderPanel() {
+  const panel = $('#panel'); const st = panel.scrollTop;
+  const f = { resumen: viewResumen, economia: viewEconomia, poblacion: viewPoblacion, politica: viewPolitica, investigacion: viewInvestigacion, presupuesto: viewPresupuesto, potencias: viewPotencias, eventos: viewEventos }[UI.tab];
+  panel.innerHTML = f();
+  panel.scrollTop = st;
+  if (UI.tab === 'resumen') drawResumenCharts();
+}
+function renderAll() { renderTop(); renderTabs(); renderPanel(); }
+
+/* ---------- Resumen ---------- */
+function computeAlerts() {
+  const A = []; const M = S.market;
+  if (S.bankruptMonths > 0) A.push(['neg', '¡Impago! ' + S.bankruptMonths + '/24 meses hasta la bancarrota. Recorta gastos o sube impuestos.']);
+  if (S.budget && S.budget.balance < 0) A.push(['warn', 'Déficit de ' + money(-S.budget.balance) + ' al mes.']);
+  if (S.tension > 50) A.push(['neg', 'Tensión revolucionaria alta (' + fmt(S.tension) + '%). Mejora el nivel de vida, baja impuestos o aumenta el bienestar.']);
+  if (!S.research.cur) A.push(['warn', 'No estás investigando nada. Elige una tecnología.']);
+  for (const g of GOOD_IDS) if (avail(g) && M[g].demand > 5 && M[g].fill < 0.9) A.push(['warn', 'Escasez de ' + GOODS[g].n.toLowerCase() + ' (' + pct(M[g].fill) + ' de la demanda cubierta).']);
+  for (const g of GOOD_IDS) if (avail(g) && M[g].price > GOODS[g].base * 1.4 && M[g].fill >= 0.9) A.push(['gold', GOODS[g].n + ' está cara (' + fmt(M[g].price) + ' £): producirla sería rentable.']);
+  const P = S.pops;
+  if (P.obreros.unemp > P.obreros.pop * 0.1) A.push(['warn', 'Paro obrero: ' + fmt(P.obreros.unemp) + ' mil desempleados. Construye industria.']);
+  for (const id of BUILDING_IDS) { const B = S.bld[id]; if (B.level > 0 && !BUILDINGS[id].auto && B.staff < 0.85) A.push(['warn', BUILDINGS[id].n + ': falta mano de obra (' + pct(B.staff) + ').']); }
+  for (const g of GROUP_IDS) if (S.groupSat[g] < 30) A.push(['neg', GROUPS[g].n + ' está muy descontenta.']);
+  if (S.pool > 8000 && S.queue.length < 2) A.push(['gold', 'Hay ' + money(S.pool) + ' de capital privado sin invertir. ¡Construye edificios privados!']);
+  if (S.queue.length === 0) A.push(['muted', 'No hay obras en marcha.']);
+  return A.slice(0, 9);
+}
+function provinceData() {
+  const L = id => lvl(id);
+  return [
+    { id: 'montes', n: 'Montes Grises', d: 'Minas de hierro y carbón, pozos de petróleo.', b: ['mina_hierro', 'mina_carbon', 'pozo', 'arsenal'], pts: '92,44 178,28 258,38 250,96 180,110 112,100', c: [176, 70] },
+    { id: 'nervia', n: 'Bosques de Nervia', d: 'Aserraderos y papeleras.', b: ['aserradero', 'papel'], pts: '258,38 338,46 380,90 330,132 250,96', c: [316, 86] },
+    { id: 'ores', n: 'Valle del Ores', d: 'Corazón industrial y sede de la capital.', b: ['textil', 'muebles', 'herramientas', 'aceria', 'electrica', 'farmacia', 'banco', 'universidad', 'hospital'], pts: '112,100 180,110 250,96 330,132 290,170 200,176 132,160', c: [222, 140] },
+    { id: 'sena', n: 'Llanura de Sena', d: 'Granero del país: plantaciones y haciendas.', b: ['granja', 'hacienda'], pts: '58,112 112,100 132,160 200,176 170,230 90,226 48,170', c: [116, 186] },
+    { id: 'costa', n: 'Costa Dorada', d: 'Puertos, viñedos y plantaciones de lujo.', b: ['puerto', 'lujo'], pts: '200,176 290,170 330,132 380,90 402,150 362,210 272,236 170,230', c: [290, 205] },
+  ].map(p => { let n = 0; for (const id of p.b) n += L(id); return Object.assign(p, { lv: n }); });
+}
+function mapSVG() {
+  const prov = provinceData(); const maxLv = Math.max(10, ...prov.map(p => p.lv));
+  const fills = ['#d8c48e', '#c9b47a', '#ddc794', '#d2bb80', '#cfb57c'];
+  let s = '<svg viewBox="0 0 440 270" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><pattern id="waves" width="16" height="8" patternUnits="userSpaceOnUse"><path d="M0 4 Q4 0 8 4 T16 4" fill="none" stroke="#3b5f86" stroke-width=".7" opacity=".55"/></pattern>' +
+    '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#5a5240" stroke-width="1" opacity=".5"/></pattern>' +
+    '<radialGradient id="vign" cx="50%" cy="50%" r="70%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".45"/></radialGradient></defs>' +
+    '<rect width="440" height="270" fill="#1b3048"/><rect width="440" height="270" fill="url(#waves)"/>' +
+    '<polygon points="0,0 200,0 178,28 92,44 58,112 48,170 0,180" fill="#6d6551"/><polygon points="0,0 200,0 178,28 92,44 58,112 48,170 0,180" fill="url(#hatch)"/>' +
+    '<polygon points="200,0 440,0 440,60 380,90 338,46 258,38 178,28" fill="#5f5848"/><polygon points="200,0 440,0 440,60 380,90 338,46 258,38 178,28" fill="url(#hatch)"/>' +
+    '<text x="20" y="80" style="fill:#d9cfb5;font-size:10px;opacity:.8">' + esc(S.powers[1].n) + '</text>' +
+    '<text x="300" y="20" style="fill:#d9cfb5;font-size:10px;opacity:.8">' + esc(S.powers[3].n) + '</text>';
+  prov.forEach((p, i) => {
+    const dev = p.lv / maxLv;
+    s += '<polygon class="prov" points="' + p.pts + '" fill="' + fills[i] + '" fill-opacity="' + (0.55 + dev * 0.4).toFixed(2) + '"' +
+      tip('<b>' + p.n + '</b><br>' + p.d + '<br>' + p.b.filter(id => lvl(id) > 0).map(id => BUILDINGS[id].ic + ' ' + BUILDINGS[id].n + ': ' + lvl(id)).join('<br>')) + '/>';
+    s += '<text x="' + p.c[0] + '" y="' + p.c[1] + '" text-anchor="middle">' + p.n + '</text>';
+  });
+  s += '<circle cx="232" cy="122" r="4.5" fill="#8e1f1f" stroke="#f3e2b0" stroke-width="1.5"/><text x="240" y="118" style="font-size:10px;font-style:italic">Valoria</text>';
+  s += '<g transform="translate(405,235)" opacity=".85"><circle r="17" fill="none" stroke="#c9a227" stroke-width=".8"/><path d="M0,-16 L4,0 L0,16 L-4,0 Z" fill="#c9a227"/><path d="M-16,0 L0,4 L16,0 L0,-4 Z" fill="#8a7234"/><text y="-20" text-anchor="middle" style="fill:#e6c75a;font-size:9px">N</text></g>';
+  s += '<g transform="translate(14,246)"><rect width="150" height="18" fill="#2a2418" stroke="#c9a227" stroke-width=".7"/><text x="75" y="13" text-anchor="middle" style="fill:#e6c75a;font-size:10px;letter-spacing:2px">REINO DE VALORIA</text></g>';
+  s += '<rect width="440" height="270" fill="url(#vign)" pointer-events="none"/></svg>';
+  return s;
+}
+function viewResumen() {
+  const P = S.pops, tp = totalPop();
+  const kpi = (l, v, s, t) => '<div class="card kpi"' + tip(t) + '><span class="l">' + l + '</span><span class="v">' + v + '</span><span class="s">' + s + '</span></div>';
+  const H = S.hist; const g10 = H.gdp.length > 13 ? (H.gdp[H.gdp.length - 1] / H.gdp[H.gdp.length - 13] - 1) : 0;
+  let h = '<h2>Resumen de la nación</h2>';
+  h += '<div class="grid g4">' +
+    kpi('PNB anual', money(S.gdp * 12), 'Crecimiento interanual: <span class="' + (g10 >= 0 ? 'pos' : 'neg') + '">' + pct(g10, 1) + '</span>', '<b>Producto Nacional Bruto</b><br>Valor añadido de toda la economía (agricultura, minería, industria, artesanía y sector público) en un año.') +
+    kpi('Población', fmt(tp / 1000, 2) + ' M', 'Migración: ' + signed((S.migration || 0) * 12, ' mil/año'), '<b>Población total</b> (en millones).<br>Crece con el nivel de vida y la sanidad. Un nivel de vida alto atrae inmigrantes; uno bajo provoca emigración.') +
+    kpi('Nivel de vida medio', fmt(S.avgSol || 0, 1) + ' / 100', bar((S.avgSol || 0) / 100, 'green'), '<b>Nivel de vida</b><br>Grado en que la población cubre sus necesidades: subsistencia (30), básicas (25), confort (25) y lujo (20). Cuenta para la puntuación final.') +
+    kpi('Puesto mundial', myRank() + 'º de 7', 'Prestigio ' + fmt(S.prestige), '<b>Ranking de Grandes Potencias</b> según el prestigio.') +
+    '</div>';
+  h += '<div class="grid g2 mt">';
+  h += '<div class="card map"><div class="between"><h3>Mapa de Valoria</h3><span class="small muted">Provincias más opacas = más desarrolladas</span></div>' + mapSVG() + '</div>';
+  h += '<div class="card"><h3>Indicadores</h3><div class="kv">' +
+    '<span' + tip('Porcentaje de la población que sabe leer. Sube con la educación y las universidades. Aumenta la investigación y la recaudación, pero también las expectativas.') + '>Alfabetización</span><span>' + pct(S.literacy, 1) + ' <span class="faint">(objetivo ' + pct(S.litTarget || 0) + ')</span></span>' +
+    '<span' + tip('Ejército, arsenales y tecnologías militares. Da prestigio, reprime radicales y decide guerras.') + '>Poder militar</span><span>' + fmt(S.military) + '</span>' +
+    '<span' + tip('Marina y puertos. Da prestigio.') + '>Poder naval</span><span>' + fmt(S.navy) + '</span>' +
+    '<span' + tip('Sanidad, hospitales, medicinas y tecnología. Reduce la mortalidad.') + '>Salud pública</span><span>' + pct(S.health) + '</span>' +
+    '<span' + tip('Porcentaje de lo debido que realmente se recauda. Depende de la administración y la alfabetización.') + '>Eficiencia fiscal</span><span>' + pct(taxEfficiency()) + '</span>' +
+    '<span>Deuda pública</span><span class="' + (S.debt > 0 ? 'warn' : '') + '">' + money(S.debt) + '</span>' +
+    '<span>Obras en curso</span><span>' + S.queue.length + ' (' + Math.min(S.queue.length, constructionSlots()) + ' activas)</span>' +
+    '<span' + tip('Fracción de la población con ideas radicales (satisfacción por debajo de 40). Alimenta la tensión revolucionaria.') + '>Radicales</span><span class="' + (S.radicals > 0.15 ? 'neg' : '') + '">' + pct(S.radicals || 0, 1) + '</span>' +
+    '</div><div class="mt"' + tip('Tensión revolucionaria: sube si hay más de un 15% de radicales. El ejército leal y el bienestar la reprimen. Al 100%: revolución y fin de la partida.') + '><div class="between small"><span>Tensión revolucionaria</span><span>' + fmt(S.tension) + '%</span></div>' + bar(S.tension / 100, 'red tall') + '</div>' +
+    '<h3 class="mt">Avisos</h3><ul class="alerts small">' + (computeAlerts().map(a => '<li class="' + a[0] + '">• ' + esc(a[1]) + '</li>').join('') || '<li class="muted">Todo en orden.</li>') + '</ul></div>';
+  h += '</div>';
+  h += '<div class="grid g2 mt">' +
+    '<div class="card"><h3' + tip('Producto Nacional Bruto anualizado, mes a mes.') + '>PNB anual</h3><canvas class="chart" id="ch-gdp"></canvas><div class="legend"><span><i style="background:#c9a227"></i>PNB (£/año)</span></div></div>' +
+    '<div class="card"><h3' + tip('Población total (eje izquierdo) e índice de precios del mercado nacional (eje derecho, 100 = precio base).') + '>Población y precios</h3><canvas class="chart" id="ch-pop"></canvas><div class="legend"><span><i style="background:#7bb35a"></i>Población (miles)</span><span><i style="background:#c8553d"></i>Índice de precios</span></div></div>' +
+    '</div>';
+  h += '<div class="card mt"><h3>Crónica reciente</h3>' + logList(8) + '</div>';
+  return h;
+}
+function logList(n) {
+  const items = S.log.slice(0, n);
+  if (!items.length) return '<p class="muted">Sin noticias todavía.</p>';
+  return '<ul class="log">' + items.map(l => '<li class="' + l.type + '"><span class="d">' + MONTH_NAMES[l.m % 12].slice(0, 3) + ' ' + (START_YEAR + Math.floor(l.m / 12)) + '</span>' + esc(l.t) + '</li>').join('') + '</ul>';
+}
+
+/* ---------- Gráficas en canvas ---------- */
+function drawChart(cv, series) {
+  if (!cv) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth, Hh = cv.clientHeight;
+  if (W < 10) return;
+  cv.width = W * dpr; cv.height = Hh * dpr;
+  const x = cv.getContext('2d'); x.scale(dpr, dpr);
+  const padL = 52, padR = series.some(s => s.axis === 1) ? 46 : 12, padT = 10, padB = 22;
+  const n = Math.max(2, ...series.map(s => s.data.length));
+  const axes = [0, 1].map(a => {
+    const vals = []; series.filter(s => (s.axis || 0) === a).forEach(s => s.data.forEach(v => vals.push(v)));
+    if (!vals.length) return null;
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (series.find(s => (s.axis || 0) === a).zero) lo = Math.min(0, lo);
+    if (hi - lo < 1e-9) { hi += 1; lo -= 1; }
+    const pad = (hi - lo) * 0.08; const z = series.find(s => (s.axis || 0) === a).zero; return { lo: z && lo >= 0 ? Math.max(0, lo - pad) : lo - pad, hi: hi + pad };
+  });
+  const X = i => padL + (W - padL - padR) * i / (n - 1);
+  const Y = (v, a) => padT + (Hh - padT - padB) * (1 - (v - axes[a].lo) / (axes[a].hi - axes[a].lo));
+  x.font = '11px Georgia, serif'; x.lineWidth = 1;
+  // rejilla
+  for (let k = 0; k <= 4; k++) {
+    const yy = padT + (Hh - padT - padB) * k / 4;
+    x.strokeStyle = 'rgba(201,162,39,.12)'; x.beginPath(); x.moveTo(padL, yy); x.lineTo(W - padR, yy); x.stroke();
+    if (axes[0]) { const v = axes[0].hi - (axes[0].hi - axes[0].lo) * k / 4; x.fillStyle = '#a59c86'; x.textAlign = 'right'; x.fillText(fmtK(v), padL - 5, yy + 4); }
+    if (axes[1]) { const v = axes[1].hi - (axes[1].hi - axes[1].lo) * k / 4; x.fillStyle = '#a59c86'; x.textAlign = 'left'; x.fillText(fmt(v), W - padR + 5, yy + 4); }
+  }
+  // años
+  const yrs = Math.ceil(n / 12); const step = yrs > 60 ? 20 : yrs > 25 ? 10 : yrs > 8 ? 5 : 1;
+  x.fillStyle = '#a59c86'; x.textAlign = 'center';
+  for (let m = 0; m < n; m += 12) {
+    const yy = START_YEAR + m / 12; if ((yy - START_YEAR) % step) continue;
+    x.fillText(String(yy), X(m), Hh - 6);
+    x.strokeStyle = 'rgba(201,162,39,.07)'; x.beginPath(); x.moveTo(X(m), padT); x.lineTo(X(m), Hh - padB); x.stroke();
+  }
+  // series
+  for (const s of series) {
+    if (s.data.length < 2) continue;
+    const a = s.axis || 0;
+    if (s.fill) {
+      const gr = x.createLinearGradient(0, padT, 0, Hh - padB); gr.addColorStop(0, s.color + '55'); gr.addColorStop(1, s.color + '05');
+      x.fillStyle = gr; x.beginPath(); x.moveTo(X(0), Hh - padB);
+      s.data.forEach((v, i) => x.lineTo(X(i), Y(v, a))); x.lineTo(X(s.data.length - 1), Hh - padB); x.closePath(); x.fill();
+    }
+    x.strokeStyle = s.color; x.lineWidth = 1.8; x.beginPath();
+    s.data.forEach((v, i) => { if (i === 0) x.moveTo(X(i), Y(v, a)); else x.lineTo(X(i), Y(v, a)); });
+    x.stroke();
+  }
+  x.strokeStyle = 'rgba(201,162,39,.35)'; x.lineWidth = 1; x.strokeRect(padL, padT, W - padL - padR, Hh - padT - padB);
+}
+function drawResumenCharts() {
+  drawChart(document.getElementById('ch-gdp'), [{ data: S.hist.gdp, color: '#c9a227', fill: true, zero: true }]);
+  drawChart(document.getElementById('ch-pop'), [{ data: S.hist.pop, color: '#7bb35a', axis: 0 }, { data: S.hist.price, color: '#c8553d', axis: 1 }]);
+}
+
+/* ---------- Economía ---------- */
+function buildingTip(id) {
+  const b = BUILDINGS[id];
+  let t = '<b>' + b.ic + ' ' + b.n + '</b><br>' + b.desc;
+  if (b.auto) return t;
+  const ls = o => Object.keys(o).map(g => fmt(o[g], 1) + ' ' + GOODS[g].n.toLowerCase()).join(', ') || '—';
+  t += '<br><br><b>Por nivel</b><br>Trabajadores: ' + Object.keys(b.work).map(c => b.work[c] + ' mil ' + CLASSES[c].n.toLowerCase()).join(', ');
+  t += '<br>Insumos/mes: ' + ls(b.in) + '<br>Produce/mes: ' + ls(b.out) + '<br>Mantenimiento: ' + b.maint + ' £/mes';
+  t += '<br>Propietario: ' + (b.state ? 'el Estado (paga sueldos e insumos)' : CLASSES[b.owner].n);
+  t += '<br>Construcción: ' + b.months + ' meses base · materiales: ' + ls(b.goods);
+  if (b.tech) t += '<br>Tecnología: ' + TECHS[b.tech].n + (S.techs[b.tech] ? ' ✔' : ' ✘');
+  return t;
+}
+function viewEconomia() {
+  const M = S.market;
+  let h = '<h2>Economía</h2><div class="card"><div class="between"><h3' + tip('Los precios cambian cada mes según la oferta y la demanda. Si el precio interior supera al mundial (+arancel), se importa; si es inferior, se exporta, hasta la capacidad comercial.') + '>Mercado nacional</h3><span class="small muted"' + tip('Unidades por mercancía y mes que se pueden importar o exportar. Sube con puertos, marina, ferrocarril y libre comercio.') + '>Capacidad comercial: ' + fmt(tradeCap()) + ' u/mercancía · Política: ' + LAWS.arancel.opts[S.laws.arancel].n + '</span></div>';
+  h += '<table><tr><th>Mercancía</th><th class="num">Precio</th><th class="num"' + tip('Precio de referencia histórico') + '>Base</th><th class="num"' + tip('Precio en el mercado mundial (fluctúa aleatoriamente)') + '>Mundial</th><th class="num">Oferta</th><th class="num">Demanda</th><th class="num">Comercio</th><th' + tip('Proporción de la demanda que se pudo satisfacer') + '>Cobertura</th></tr>';
+  for (const g of GOOD_IDS) {
+    const m = M[g], G = GOODS[g];
+    if (!avail(g)) { h += '<tr class="locked"><td>' + G.ic + ' ' + G.n + '</td><td colspan="7" class="muted small">Requiere la tecnología «' + TECHS[G.tech].n + '»</td></tr>'; continue; }
+    const r = m.price / G.base; const pc = r > 1.25 ? 'neg' : r < 0.8 ? 'pos' : '';
+    const dTip = '<b>Demanda de ' + G.n.toLowerCase() + '</b><br>Población: ' + fmt(m.dPop, 1) + '<br>Industria (insumos): ' + fmt(m.dIn, 1) + '<br>Estado: ' + fmt(m.dGov, 1) + '<br>Construcción: ' + fmt(m.dCon, 1);
+    const tr = m.imp > 0.05 ? '<span class="neg"' + tip('Importación') + '>▼ ' + fmt(m.imp, 1) + '</span>' : m.exp > 0.05 ? '<span class="pos"' + tip('Exportación') + '>▲ ' + fmt(m.exp, 1) + '</span>' : '<span class="faint">—</span>';
+    h += '<tr><td>' + G.ic + ' ' + G.n + '</td><td class="num ' + pc + '">' + fmt(m.price, 1) + '</td><td class="num faint">' + G.base + '</td><td class="num muted">' + fmt(m.world, 1) + '</td><td class="num">' + fmt(m.supply, 1) + '</td><td class="num"' + tip(dTip) + '>' + fmt(m.demand, 1) + '</td><td class="num">' + tr + '</td><td style="min-width:90px">' + bar(m.fill, m.fill < 0.9 ? 'red' : 'green') + '</td></tr>';
+  }
+  h += '</table></div>';
+  // Edificios
+  const cats = [['agri', 'Agricultura'], ['ext', 'Extracción'], ['ind', 'Industria'], ['serv', 'Servicios y Estado']];
+  h += '<div class="card mt"><div class="between"><h3' + tip('Los edificios privados se pagan primero con la capacidad de inversión privada y el resto con el tesoro. Los estatales, solo con el tesoro, y además cuestan sueldos e insumos cada mes.') + '>Edificios</h3><span class="small muted">Inversión privada: <span class="gold">' + money(S.pool) + '</span> · Tesoro: <span class="gold">' + money(S.treasury) + '</span> · Velocidad de obra: ' + pct(constructionSpeed()) + ' · Obras simultáneas: ' + constructionSlots() + '</span></div>';
+  h += '<table><tr><th>Edificio</th><th class="num">Niveles</th><th' + tip('Proporción de puestos cubiertos por trabajadores') + '>Plantilla</th><th class="num"' + tip('Eficiencia real: plantilla × disponibilidad de insumos × productividad tecnológica') + '>Rendimiento</th><th class="num"' + tip('Beneficio mensual por nivel para los propietarios (o coste para el Estado)') + '>Resultado/nivel</th><th class="num"' + tip('Salario medio mensual por cada 1.000 trabajadores') + '>Salario</th><th class="num">Coste</th><th></th></tr>';
+  for (const [cat, cn] of cats) {
+    h += '<tr><td colspan="8" class="serif gold" style="padding-top:10px">' + cn + '</td></tr>';
+    for (const id of BUILDING_IDS) {
+      const b = BUILDINGS[id]; if (b.cat !== cat) continue;
+      const B = S.bld[id], lk = buildingLocked(id), q = queuedCount(id);
+      if (b.auto) {
+        h += '<tr><td' + tip(buildingTip(id)) + '>' + b.ic + ' ' + b.n + '</td><td class="num">' + B.level + '</td><td colspan="2" class="small muted">' + fmt(S.pops.campesinos.pop - (S.jobs.campesinos || 0)) + ' mil campesinos</td><td class="num small muted">—</td><td class="num">' + fmt(S.pops.campesinos.income / Math.max(1, S.pops.campesinos.pop), 1) + '</td><td class="num small muted">automático</td><td></td></tr>';
+        continue;
+      }
+      const cb = canBuild(id); const c = buildCost(id);
+      const res = B.level > 0 ? B.profit / B.level : 0;
+      const costTip = '<b>Coste: ' + money(c.total) + '</b><br>Dinero: ' + money(c.money) + '<br>Materiales (a precio actual): ' + money(c.goods) + (b.state ? '<br>Se paga con el <b>tesoro</b>.' : '<br>Se paga con la <b>inversión privada</b> (' + money(S.pool) + ') y el resto con el tesoro.') + (cb.ok ? '' : '<br><span class="neg">' + esc(cb.why) + '</span>');
+      h += '<tr class="' + (lk ? 'locked' : '') + '"><td' + tip(buildingTip(id)) + '>' + b.ic + ' ' + b.n + (b.state ? ' <span class="tag">Estado</span>' : '') + '</td>' +
+        '<td class="num">' + B.level + '<span class="faint">/' + b.max + '</span>' + (q ? ' <span class="tag gold"' + tip(q + ' en construcción o en cola') + '>+' + q + '</span>' : '') + '</td>' +
+        '<td style="min-width:70px">' + (B.level ? bar(B.staff, B.staff < 0.9 ? 'red' : 'green') : '<span class="faint">—</span>') + '</td>' +
+        '<td class="num">' + (B.level ? pct(B.eff * (B.pm || 1)) : '—') + '</td>' +
+        '<td class="num">' + (B.level ? signed(res, '') : '<span class="faint">—</span>') + '</td>' +
+        '<td class="num muted">' + (B.level && B.wagePer ? fmt(B.wagePer, 1) : B.level && b.state ? fmt(S.wages[Object.keys(b.work)[0]] || 0, 1) : '—') + '</td>' +
+        '<td class="num"' + tip(costTip) + '>' + (lk ? '<span class="faint">🔒 ' + esc(TECHS[b.tech].n) + '</span>' : money(c.total)) + '</td>' +
+        '<td class="right" style="white-space:nowrap"><button class="btn sm primary" data-act="build" data-arg="' + id + '"' + (cb.ok ? '' : ' aria-disabled="true"') + tip(cb.ok ? 'Construir un nivel más' + (cb.fromPool ? ' (' + money(cb.fromPool) + ' de inversión privada' + (cb.fromTreasury ? ' + ' + money(cb.fromTreasury) + ' del tesoro' : '') + ')' : ' (' + money(cb.fromTreasury) + ' del tesoro)') : cb.why) + '>＋ Construir</button> ' +
+        '<button class="btn sm" data-act="demolish" data-arg="' + id + '"' + (B.level > 0 ? '' : ' aria-disabled="true"') + tip('Demoler un nivel (sin reembolso). Útil si el edificio da pérdidas.') + '>－</button></td></tr>';
+    }
+  }
+  h += '</table></div>';
+  // Cola
+  h += '<div class="card mt"><h3' + tip('Las primeras obras de la cola avanzan a la vez (según las obras simultáneas). Cada obra consume materiales del mercado mientras avanza.') + '>Obras en construcción</h3>';
+  if (!S.queue.length) h += '<p class="muted">No hay obras en marcha.</p>';
+  else {
+    const slots = constructionSlots();
+    h += '<table><tr><th>#</th><th>Edificio</th><th>Progreso</th><th class="num">Meses restantes</th><th></th></tr>' + S.queue.map((q, i) => {
+      const b = BUILDINGS[q.id], frac = q.prog / b.months, rem = Math.max(0, Math.ceil((b.months - q.prog) / constructionSpeed()));
+      return '<tr><td>' + (i + 1) + '</td><td>' + b.ic + ' ' + b.n + (i >= slots ? ' <span class="tag">en espera</span>' : '') + '</td><td style="min-width:140px">' + bar(frac, 'blue') + '</td><td class="num">' + (i >= slots ? '—' : rem) + '</td><td class="right"><button class="btn sm danger" data-act="cancel" data-arg="' + i + '"' + tip('Cancelar la obra y recuperar parte del coste en el tesoro') + '>✕</button></td></tr>';
+    }).join('') + '</table>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/* ---------- Población ---------- */
+function viewPoblacion() {
+  const P = S.pops, tp = totalPop();
+  let h = '<h2>Población</h2>';
+  h += '<div class="card"><div class="grid g4">' +
+    '<div class="kpi"' + tip('Población total en miles de habitantes.') + '><span class="l">Habitantes</span><span class="v">' + fmt(tp) + ' mil</span></div>' +
+    '<div class="kpi"' + tip('Inmigración neta al año (miles). Positiva si el nivel de vida medio supera 42; negativa si baja de 30.') + '><span class="l">Migración neta</span><span class="v">' + signed((S.migration || 0) * 12, ' mil/año') + '</span></div>' +
+    '<div class="kpi"' + tip('Nivel de vida medio ponderado por población.') + '><span class="l">Nivel de vida medio</span><span class="v">' + fmt(S.avgSol || 0, 1) + '</span></div>' +
+    '<div class="kpi"' + tip('Las expectativas de todas las clases suben con la alfabetización: un pueblo educado exige más.') + '><span class="l">Alfabetización</span><span class="v">' + pct(S.literacy, 1) + '</span></div>' +
+    '</div></div>';
+  h += '<div class="grid gauto mt">';
+  for (const c of CLASS_IDS) {
+    const p = P[c], cl = CLASSES[c];
+    const expv = cl.exp + S.literacy * 20;
+    const tierTip = NEEDS.map((n, i) => n.n + ': ' + pct(p.tiers[i] || 0)).join('<br>');
+    h += '<div class="card popcard"><div class="head"><span class="ic">' + cl.ic + '</span><div><h3' + tip('<b>' + cl.n + '</b><br>' + cl.desc) + '>' + cl.n + '</h3><span class="small muted">' + fmt(p.pop, 1) + ' mil · ' + pct(p.pop / tp, 1) + ' ' + signed((p.growth || 0) * 12, ' mil/año') + '</span></div></div>';
+    h += '<div class="kv">' +
+      '<span' + tip('Renta neta mensual por cada 1.000 habitantes de la clase (tras impuestos, diezmo y con sueldos públicos y ayudas).') + '>Renta /1.000 hab.</span><span>' + fmt(netPC(c), 1) + ' £</span>' +
+      '<span' + tip('Ahorros acumulados de toda la clase.') + '>Riqueza</span><span>' + money(p.wealth) + '</span>' +
+      '<span' + tip('Peso político de la clase según el censo electoral vigente.') + '>Poder político</span><span>' + pct(S.power[c] || 0, 1) + '</span>' +
+      '<span' + tip('Impuesto sobre la renta de esta clase (se cambia en Presupuesto).') + '>Impuesto</span><span>' + TAX_LEVELS[S.taxes[c]].n + '</span>' +
+      (c === 'obreros' ? '<span' + tip('Obreros sin puesto de trabajo. Si no hay empleo, vuelven poco a poco al campo.') + '>Desempleados</span><span class="' + (p.unemp > p.pop * 0.1 ? 'neg' : '') + '">' + fmt(p.unemp, 1) + ' mil</span>' : '') +
+      '<span' + tip('Fracción de la clase con ideas radicales.') + '>Radicales</span><span class="' + (p.radical > 0.2 ? 'neg' : '') + '">' + pct(p.radical, 0) + '</span>' +
+      '</div>';
+    h += '<div class="mt small"' + tip('<b>Nivel de vida</b>: ' + fmt(p.sol, 1) + '<br>' + tierTip + '<br>La marca blanca indica sus expectativas (' + fmt(expv) + ').') + '><div class="between"><span>Nivel de vida</span><span>' + fmt(p.sol) + '</span></div>' + bar(p.sol / 100, 'blue', expv / 100) + '</div>';
+    h += '<div class="small" style="margin-top:6px"' + tip('<b>Satisfacción</b>: depende del nivel de vida frente a sus expectativas, los impuestos, las leyes, el gasto público y los eventos. Por debajo de 40 aparecen radicales.') + '><div class="between"><span>Satisfacción</span><span class="' + satClass(p.sat) + '">' + fmt(p.sat) + '</span></div>' + bar(p.sat / 100, satBarCls(p.sat), 0.4) + '</div>';
+    h += '<div class="row small" style="margin-top:6px;gap:4px"' + tip('Cobertura de cada nivel de necesidades: subsistencia, básicas, confort y lujo.') + '>' + NEEDS.map((n, i) => '<div style="flex:1">' + bar(p.tiers[i] || 0, i === 0 && (p.tiers[0] || 0) < 0.7 ? 'red' : 'green') + '</div>').join('') + '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  h += '<div class="card mt"><h3' + tip('Cada clase intenta comprar por orden: primero la subsistencia, luego las necesidades básicas, después el confort y por último el lujo. Las cantidades son por cada 1.000 habitantes y se multiplican por el factor de consumo de la clase.') + '>Jerarquía de necesidades</h3><table><tr><th>Nivel</th><th class="num">Peso</th><th>Mercancías (por 1.000 hab./mes)</th></tr>' +
+    NEEDS.map(n => '<tr><td>' + n.n + '</td><td class="num">' + n.w + '</td><td class="small">' + Object.keys(n.g).map(g => GOODS[g].ic + ' ' + GOODS[g].n + ' ' + fmt(n.g[g], 3) + (avail(g) ? '' : ' <span class="faint">(no disponible)</span>')).join(' · ') + '</td></tr>').join('') +
+    '</table><p class="small muted">Factor de consumo: ' + CLASS_IDS.map(c => CLASSES[c].n + ' ×' + fmt(CLASSES[c].mult, 1)).join(' · ') + '</p></div>';
+  return h;
+}
+
+/* ---------- Política ---------- */
+function viewPolitica() {
+  let h = '<h2>Política</h2>';
+  h += '<div class="grid g3"><div class="card kpi"' + tip('Satisfacción media ponderada por el poder político. Una estabilidad baja reduce la recaudación.') + '><span class="l">Estabilidad</span><span class="v">' + fmt(S.stability) + '/100</span>' + bar(S.stability / 100, satBarCls(S.stability)) + '</div>' +
+    '<div class="card kpi"' + tip('Si llega al 100%, la revolución derroca al gobierno y pierdes la partida. Sube cuando más del 15% de la población es radical; la reprimen un ejército leal y el bienestar.') + '><span class="l">Tensión revolucionaria</span><span class="v ' + (S.tension > 60 ? 'neg' : '') + '">' + fmt(S.tension) + '% <span class="small">(' + (S.tensionDelta >= 0 ? '+' : '') + fmt(S.tensionDelta || 0, 1) + '/mes)</span></span>' + bar(S.tension / 100, 'red') + '</div>' +
+    '<div class="card kpi"' + tip('Tras aprobar una ley, el parlamento necesita 12 meses antes de la siguiente reforma.') + '><span class="l">Próxima reforma</span><span class="v">' + (S.lawCooldown > 0 ? 'en ' + S.lawCooldown + ' meses' : 'Disponible') + '</span><span class="s">Radicales: ' + pct(S.radicals || 0, 1) + ' de la población</span></div></div>';
+  // Leyes
+  h += '<div class="card mt"><h3' + tip('Para aprobar una ley, el poder de los grupos que la apoyan debe ser al menos el 80% del poder de los que se oponen. Los grupos perjudicados se enfadarán durante 2 años.') + '>Leyes</h3><div class="grid g2">';
+  for (const l of LAW_IDS) {
+    const L = LAWS[l];
+    h += '<div style="padding:8px 0;border-bottom:1px solid rgba(74,62,38,.5)"><div class="between"><b class="serif gold"' + tip(L.tip) + '>' + L.n + '</b><span class="small muted">' + L.opts[S.laws[l]].n + '</span></div><div class="lawopts">';
+    for (const o in L.opts) {
+      const O = L.opts[o], on = S.laws[l] === o;
+      const ce = on ? { ok: false } : canEnact(l, o);
+      const sp = on ? null : lawSupport(l, o);
+      const stance = GROUP_IDS.map((g, gi) => { const v = O.st[gi]; return GROUPS[g].ic + ' ' + GROUPS[g].n + ': <span class="' + (v > 0 ? 'pos' : v < 0 ? 'neg' : 'muted') + '">' + (v > 0 ? '+' : '') + v + '</span>'; }).join('<br>');
+      const t = '<b>' + O.n + '</b><br>' + O.d + '<br><br>Postura de los grupos:<br>' + stance + (sp ? '<br><br>Apoyo (por poder): <span class="pos">' + pct(sp.pro) + '</span> · Oposición: <span class="neg">' + pct(sp.contra) + '</span>' : '') + (!on && !ce.ok ? '<br><span class="neg">' + esc(ce.why) + '</span>' : '') + (on ? '<br><span class="gold">En vigor</span>' : '');
+      h += '<button class="lawopt ' + (on ? 'on' : '') + '" data-act="law" data-arg="' + l + '|' + o + '"' + (on || !ce.ok ? ' aria-disabled="true"' : '') + tip(t) + '>' + (O.tech && !S.techs[O.tech] ? '🔒 ' : '') + O.n + '</button>';
+    }
+    h += '</div></div>';
+  }
+  h += '</div></div>';
+  // Grupos de interés
+  h += '<h3 class="mt">Grupos de interés</h3><div class="grid g3">';
+  GROUP_IDS.forEach((g, gi) => {
+    const G = GROUPS[g], sat = S.groupSat[g] || 0, pw = S.groupPower[g] || 0;
+    let lawSt = 0; const likes = [], hates = [];
+    for (const l of LAW_IDS) { const v = LAWS[l].opts[S.laws[l]].st[gi]; lawSt += v; if (v > 0) likes.push(LAWS[l].opts[S.laws[l]].n); if (v < 0) hates.push(LAWS[l].opts[S.laws[l]].n); }
+    const mem = Object.keys(G.mem).map(c => CLASSES[c].n + (G.mem[c] < 1 ? ' (' + pct(G.mem[c]) + ')' : '')).join(', ');
+    let rad = 0, popT = 0; for (const c in G.mem) { rad += S.pops[c].radical * S.pops[c].pop * G.mem[c]; popT += S.pops[c].pop * G.mem[c]; }
+    const mood = sat >= 60 ? 'Leal' : sat >= 40 ? 'Neutral' : sat >= 25 ? 'Descontento' : 'Furioso';
+    h += '<div class="card"><div class="between"><h3 style="margin:0;color:' + G.color + '"' + tip('Miembros: ' + mem) + '>' + G.ic + ' ' + G.n + '</h3><span class="tag ' + (sat >= 60 ? 'good' : sat < 40 ? 'bad' : '') + '">' + mood + '</span></div>' +
+      '<div class="small mt"' + tip('Peso político del grupo (suma del poder de sus clases).') + '><div class="between"><span>Poder político</span><span>' + pct(pw, 1) + '</span></div>' + bar(pw, 'blue') + '</div>' +
+      '<div class="small" style="margin-top:6px"' + tip('Satisfacción media de sus miembros. Por debajo de 40 surgen radicales; si el ejército está furioso, puede dar un golpe de Estado.') + '><div class="between"><span>Satisfacción</span><span class="' + satClass(sat) + '">' + fmt(sat) + '</span></div>' + bar(sat / 100, satBarCls(sat), 0.4) + '</div>' +
+      '<div class="small" style="margin-top:6px"><span class="muted">Radicales:</span> ' + pct(popT ? rad / popT : 0) + ' · <span class="muted">Postura ante las leyes:</span> <span class="' + (lawSt > 0 ? 'pos' : lawSt < 0 ? 'neg' : '') + '">' + (lawSt > 0 ? '+' : '') + lawSt + '</span></div>' +
+      '<div class="small faint" style="margin-top:4px">' + (likes.length ? '👍 ' + esc(likes.join(', ')) : '') + (hates.length ? '<br>👎 ' + esc(hates.join(', ')) : '') + '</div></div>';
+  });
+  h += '</div>';
+  // Modificadores activos
+  const mods = S.mods.filter(m => m.key === 'sat' && m.label);
+  if (mods.length) {
+    const agg = {};
+    mods.forEach(m => { const k = m.label + '|' + (m.cls || 'todos'); agg[k] = agg[k] || { l: m.label, c: m.cls, v: 0, mo: 0 }; agg[k].v += m.val; agg[k].mo = Math.max(agg[k].mo, m.months); });
+    h += '<div class="card mt"><h3>Efectos temporales sobre la satisfacción</h3><table><tr><th>Causa</th><th>Clase</th><th class="num">Efecto</th><th class="num">Meses</th></tr>' +
+      Object.values(agg).map(a => '<tr><td>' + esc(a.l) + '</td><td>' + (a.c ? CLASSES[a.c].n : 'Todas') + '</td><td class="num ' + (a.v > 0 ? 'pos' : 'neg') + '">' + (a.v > 0 ? '+' : '') + fmt(a.v) + '</td><td class="num">' + a.mo + '</td></tr>').join('') + '</table></div>';
+  }
+  return h;
+}
+
+/* ---------- Investigación ---------- */
+function viewInvestigacion() {
+  const R = S.research, rp = S.rp || researchPoints();
+  let h = '<h2>Investigación</h2><div class="card"><div class="between"><div>';
+  if (R.cur) {
+    const t = TECHS[R.cur], pr = R.prog[R.cur] || 0;
+    h += '<h3 style="margin:0">Investigando: ' + t.n + '</h3><div class="small muted">' + fmt(pr) + ' / ' + t.cost + ' puntos · faltan unos ' + Math.ceil((t.cost - pr) / Math.max(0.1, rp)) + ' meses</div></div><div style="width:40%">' + bar(pr / t.cost, 'blue tall') + '</div>';
+  } else h += '<h3 style="margin:0" class="warn">No hay investigación en curso</h3><div class="small muted">Haz clic en una tecnología disponible. Los puntos se acumulan (hasta 150) mientras tanto: ' + fmt(R.bank || 0) + '.</div></div>';
+  h += '</div><p class="small muted"' + tip('Base 3 + alfabetización × 12 + 2,5 por universidad (con plantilla) · +10% con Imprenta rotativa.') + '>Puntos de investigación: <b class="gold">' + fmt(rp, 1) + '</b> al mes. Tecnologías: ' + Object.keys(S.techs).length + ' / ' + TECH_IDS.length + '.</p></div>';
+  h += '<div class="grid g3 mt">';
+  for (const br in BRANCHES) {
+    h += '<div class="card"><h3>' + BRANCHES[br] + '</h3>';
+    TECH_IDS.filter(id => TECHS[id].b === br).sort((a, b) => TECHS[a].cost - TECHS[b].cost).forEach(id => {
+      const t = TECHS[id], done = !!S.techs[id], av = techAvailable(id), cur = R.cur === id, pr = R.prog[id] || 0;
+      const cls = done ? 'done' : cur ? 'cur' : av ? '' : 'lock';
+      const reqs = t.req.map(r => (S.techs[r] ? '✔ ' : '✘ ') + TECHS[r].n).join(', ');
+      h += '<div class="tech ' + cls + '"' + (av && !cur ? ' data-act="research" data-arg="' + id + '"' : '') + tip('<b>' + t.n + '</b><br>' + t.d + '<br>Coste: ' + t.cost + ' puntos (≈' + Math.ceil(Math.max(0, t.cost - pr) / Math.max(0.1, rp)) + ' meses)' + (reqs ? '<br>Requiere: ' + reqs : '') + (av && !cur ? '<br><span class="gold">Clic para investigar</span>' : '')) + '>' +
+        '<div class="between"><span class="tn">' + (done ? '✔ ' : !av ? '🔒 ' : '') + t.n + '</span><span class="small muted">' + t.cost + '</span></div><div class="td">' + t.d + '</div>' +
+        (done ? '' : bar(pr / t.cost, 'blue')) + '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/* ---------- Presupuesto ---------- */
+function viewPresupuesto() {
+  const B = S.budget; if (!B) return '<p>Sin datos aún.</p>';
+  const eff = B.taxEff;
+  let h = '<h2>Presupuesto</h2>';
+  h += '<div class="grid g3"><div class="card kpi"><span class="l">Ingresos mensuales</span><span class="v pos">' + money(B.income) + '</span></div><div class="card kpi"><span class="l">Gastos mensuales</span><span class="v neg">' + money(B.expenses) + '</span></div><div class="card kpi"><span class="l">Balance</span><span class="v">' + signed(B.balance) + '</span><span class="s">Tesoro: ' + money(S.treasury) + '</span></div></div>';
+  h += '<div class="grid g2 mt">';
+  // Impuestos
+  h += '<div class="card"><h3' + tip('Impuesto sobre la renta de cada clase. Recaudación real = renta × tipo × eficiencia fiscal. Subir impuestos enfada a la clase afectada.') + '>Impuestos por clase</h3>' +
+    '<p class="small muted"' + tip('Eficiencia = 35% + alfabetización + capacidad administrativa (gasto en administración) + estabilidad.') + '>Eficiencia fiscal: <b class="gold">' + pct(eff) + '</b> · Tipos: Nulo 0% · Bajo 6% · Medio 13% · Alto 22%</p><table><tr><th>Clase</th><th>Nivel</th><th class="num">Recauda</th></tr>';
+  for (const c of CLASS_IDS) {
+    h += '<tr><td>' + CLASSES[c].ic + ' ' + CLASSES[c].n + '</td><td style="min-width:200px"><div class="taxlvl">' + TAX_LEVELS.map((t, i) => '<button class="' + (S.taxes[c] === i ? 'on' : '') + '" data-act="tax" data-arg="' + c + '|' + i + '"' + tip(t.n + ': ' + pct(t.r) + ' de la renta. Penalización a la satisfacción: −' + t.pen) + '>' + t.n + '</button>').join('') + '</div></td><td class="num">' + money(B.taxByClass[c] || 0) + '</td></tr>';
+  }
+  h += '</table><h3 class="mt">Detalle de ingresos</h3><div class="kv">' +
+    '<span>Impuestos sobre la renta</span><span>' + money(B.incomeTax) + '</span>' +
+    '<span' + tip('Depende de la ley de impuesto al consumo (pestaña Política).') + '>Impuesto al consumo (' + LAWS.consumo.opts[S.laws.consumo].n + ')</span><span>' + money(B.ctax) + '</span>' +
+    '<span' + tip('Arancel sobre las importaciones según la política arancelaria.') + '>Aranceles</span><span>' + money(B.tariff) + '</span>' +
+    '<span class="gold">Total</span><span class="gold">' + money(B.income) + '</span></div></div>';
+  // Gastos
+  const sc = spendScale();
+  const maxE = Math.max(...SPEND_IDS.map(k => SPEND[k].base * sc));
+  h += '<div class="card"><h3' + tip('Mueve los controles para asignar el gasto de cada partida (0-100% de su coste máximo). El coste crece con la población y la riqueza del país.') + '>Gasto público</h3><table>';
+  for (const k of SPEND_IDS) {
+    const sp = SPEND[k], v = S.spend[k], e = B.exp[k] || 0;
+    h += '<tr><td style="width:34%"' + tip('<b>' + sp.n + '</b><br>' + sp.tip + '<br>Coste al 100%: ' + money(sp.base * sc) + '/mes') + '>' + sp.ic + ' ' + sp.n + '</td><td><input type="range" class="slider" min="0" max="100" step="5" value="' + v + '" data-spend="' + k + '"></td><td class="num" style="width:48px"><span id="sv-' + k + '">' + v + '%</span></td><td class="num" style="width:80px" id="se-' + k + '">' + money(e) + '</td></tr>' +
+      '<tr><td colspan="4" style="padding-top:0;border:none">' + bar(e / maxE, k === 'ejercito' || k === 'marina' ? 'red' : k === 'corte' ? '' : 'blue') + '</td></tr>';
+  }
+  h += '</table><div class="kv mt">' +
+    '<span' + tip('Sueldos, insumos y mantenimiento de puertos, universidades, hospitales y arsenales.') + '>Edificios estatales</span><span>' + money(B.stateBld) + '</span>' +
+    '<span>Intereses de la deuda</span><span>' + money(B.interest) + '</span>' +
+    '<span class="gold">Total gastos</span><span class="gold">' + money(B.expenses) + '</span></div></div>';
+  h += '</div>';
+  // Deuda
+  const lim = creditLimit();
+  h += '<div class="card mt"><h3' + tip('Si el tesoro se queda en negativo, se pide prestado automáticamente hasta el límite de crédito. Si ya no hay crédito, el Estado entra en impago: 24 meses seguidos = bancarrota y derrota.') + '>Deuda y crédito</h3><div class="grid g4">' +
+    '<div class="kpi"><span class="l">Deuda</span><span class="v ' + (S.debt > 0 ? 'warn' : '') + '">' + money(S.debt) + '</span></div>' +
+    '<div class="kpi"' + tip('Interés anual. Sube si tu solvencia es baja o has suspendido pagos; baja con los bancos.') + '><span class="l">Interés anual</span><span class="v">' + pct(interestRate(), 1) + '</span><span class="s">' + money(S.debt * interestRate() / 12) + '/mes</span></div>' +
+    '<div class="kpi"' + tip('Máximo que puedes deber. Depende de tus ingresos y de tu solvencia.') + '><span class="l">Límite de crédito</span><span class="v">' + money(lim) + '</span>' + bar(lim > 0 ? S.debt / lim : 1, 'red') + '</div>' +
+    '<div class="kpi"' + tip('Reputación ante los prestamistas (0-100%). Se recupera lentamente; se hunde si suspendes pagos.') + '><span class="l">Solvencia</span><span class="v">' + pct(S.credit) + '</span>' + (S.defaultTimer > 0 ? '<span class="s neg">Penalización por impago: ' + S.defaultTimer + ' meses</span>' : '') + '</div></div>' +
+    '<div class="row mt" style="flex-wrap:wrap">' +
+    [5000, 20000].map(a => '<button class="btn" data-act="loan" data-arg="' + a + '"' + tip('Pedir ' + money(a) + ' prestados al ' + pct(interestRate(), 1)) + '>Pedir ' + money(a) + '</button>').join('') +
+    [5000, 20000].map(a => '<button class="btn" data-act="repay" data-arg="' + a + '"' + (S.debt > 0 ? '' : ' aria-disabled="true"') + tip('Devolver ' + money(a) + ' de deuda') + '>Amortizar ' + money(a) + '</button>').join('') +
+    '<button class="btn danger" data-act="default"' + (S.debt > 0 ? '' : ' aria-disabled="true"') + tip('Repudiar toda la deuda. El crédito se hunde 10 años, pierdes prestigio, los capitalistas se enfurecen y la inversión privada cae a la mitad.') + '>Suspender pagos</button></div></div>';
+  return h;
+}
+
+/* ---------- Grandes Potencias ---------- */
+function viewPotencias() {
+  const list = powerRanking(); const maxP = list[0].prestige;
+  let h = '<h2>Grandes Potencias</h2><div class="card"><p class="small muted"' + tip('Prestigio = PNB/300 + poder militar×0,6 + poder naval×0,4 + alfabetización×40 + tecnologías×3 + éxitos en eventos.') + '>El prestigio de cada nación depende de su economía, su fuerza militar, su educación, su tecnología y sus éxitos diplomáticos. Las cuatro primeras son consideradas <b class="gold">Grandes Potencias</b>.</p>' +
+    '<table><tr><th>#</th><th>Nación</th><th>Prestigio</th><th class="num">PNB anual</th><th class="num">Poder militar</th><th class="num">Poder naval</th><th class="num">Alfabetización</th><th class="num">Población</th></tr>';
+  list.forEach((p, i) => {
+    h += '<tr style="' + (p.me ? 'background:rgba(201,162,39,.12)' : '') + '"><td class="serif ' + (i < 4 ? 'gold' : 'muted') + '">' + (i + 1) + '</td><td><span style="display:inline-block;width:10px;height:10px;background:' + p.color + ';border:1px solid #000;margin-right:6px"></span>' + (p.me ? '<b class="gold">' + p.n + ' (tú)</b>' : p.n) + (i < 4 ? ' <span class="tag gold">Gran Potencia</span>' : '') + '</td>' +
+      '<td style="min-width:180px"><div class="between small"><span>' + fmt(p.prestige) + '</span></div>' + bar(p.prestige / maxP, p.me ? '' : 'blue') + '</td>' +
+      '<td class="num">' + money(p.gdp * 12) + '</td><td class="num">' + fmt(p.mil) + '</td><td class="num">' + fmt(p.navy) + '</td><td class="num">' + pct(p.lit) + '</td><td class="num">' + fmt(p.pop / 1000, 1) + ' M</td></tr>';
+  });
+  h += '</table></div>';
+  const sc = scoreBreakdown();
+  h += '<div class="card mt"><h3' + tip('Al terminar en diciembre de 1936 se calcula tu puntuación final.') + '>Puntuación actual</h3><div class="grid g4">' +
+    '<div class="kpi"><span class="l">Prestigio</span><span class="v">' + fmt(sc.prestige) + '</span></div>' +
+    '<div class="kpi"' + tip('PNB anual / 5.000') + '><span class="l">PNB</span><span class="v">' + fmt(sc.gdp) + '</span></div>' +
+    '<div class="kpi"' + tip('Nivel de vida medio × 10') + '><span class="l">Nivel de vida</span><span class="v">' + fmt(sc.sol) + '</span></div>' +
+    '<div class="kpi"><span class="l">Total</span><span class="v gold">' + fmt(sc.total) + '</span></div></div></div>';
+  return h;
+}
+
+/* ---------- Crónica ---------- */
+function viewEventos() {
+  return '<h2>Crónica de Valoria</h2><div class="card"><p class="small muted">Los eventos aparecen en una ventana cuando ocurren y detienen el tiempo hasta que elijas. Aquí tienes el registro de todo lo sucedido.</p>' + logList(200).replace('class="log"', 'class="log" style="max-height:none"') + '</div>';
+}
+
+/* =====================================================================
+   Sección 11: VENTANAS MODALES
+   ===================================================================== */
+function showModal(html, wide) {
+  const m = $('#modal'); m.classList.remove('hidden');
+  const b = m.querySelector('.box'); b.className = 'box' + (wide ? ' wide' : ''); b.innerHTML = html;
+  UI.modal = true; hideTip();
+}
+function closeModal() { $('#modal').classList.add('hidden'); UI.modal = null; }
+function showEvent() {
+  const pe = S.pendingEvent; if (!pe) return;
+  const e = EVENTS[pe.id];
+  showModal('<div class="evic">' + e.ic + '</div><h2>' + e.t + '</h2><div class="small muted" style="text-align:center;margin-top:-8px;margin-bottom:10px">' + dateStr() + '</div><div class="evtext">' + esc(eventText(pe.id)) + '</div>' +
+    e.opts.map((o, i) => '<button class="opt" data-act="evopt" data-arg="' + i + '"><b>' + esc(o.t) + '</b><span>' + esc(eventTip(o)) + '</span></button>').join(''));
+}
+function showHelp() {
+  showModal('<h2>Cómo jugar</h2><div class="evtext" style="font-style:normal">Gobiernas <b class="gold">Valoria</b>, un pequeño reino agrario, desde enero de 1836 hasta diciembre de 1936. Tu objetivo: convertirlo en una gran potencia próspera sin que estalle una revolución ni quiebre el Estado.</div>' +
+    '<ul>' +
+    '<li><b class="gold">El tiempo</b> avanza mes a mes. Usa ⏸ ▶ ▶▶ ▶▶▶ (o Espacio y 1-3). Los eventos detienen el reloj hasta que decidas.</li>' +
+    '<li><b class="gold">Economía</b>: construye edificios. Los privados se pagan primero con la <i>inversión privada</i> (ahorro de capitalistas y terratenientes) y después con el tesoro. Mira el mercado: una mercancía cara o escasa es una oportunidad.</li>' +
+    '<li><b class="gold">Empleo</b>: las fábricas y minas necesitan obreros, que salen del campo. Trabajar en la industria paga más que la subsistencia, así que la población se enriquece y consume más.</li>' +
+    '<li><b class="gold">Presupuesto</b>: ajusta impuestos por clase y gastos por partida. El déficit genera deuda; sin crédito, impago; 24 meses en impago = <span class="neg">bancarrota</span>.</li>' +
+    '<li><b class="gold">Política</b>: cada clase tiene poder político y satisfacción. Las leyes, los impuestos y el nivel de vida la mueven. Los descontentos se radicalizan; con muchos radicales sube la tensión. Al 100% = <span class="neg">revolución</span>. Si el ejército se enfada, puede dar un golpe.</li>' +
+    '<li><b class="gold">Investigación</b>: elige tecnologías para desbloquear edificios, leyes y mejoras de productividad. Las universidades y la educación aceleran el progreso.</li>' +
+    '<li><b class="gold">Victoria</b>: en 1936 se suma prestigio + PNB + nivel de vida. ¡Intenta ser la primera potencia!</li>' +
+    '</ul><p class="small muted">Consejo inicial: investiga el Telar mecánico, construye aserraderos, fábricas textiles y un segundo puerto, y no descuides la educación. Pasa el ratón por encima de cualquier dato para ver explicaciones.</p>' +
+    '<div class="row" style="justify-content:center;margin-top:12px"><button class="btn primary" data-act="close">¡A gobernar!</button></div>', true);
+}
+function slotInfo(k) {
+  try {
+    const raw = localStorage.getItem('valoria_save_' + k); if (!raw) return null;
+    const d = JSON.parse(raw); return { date: dateStr(d.month), prestige: d.prestige, t: d.savedAt || '' };
+  } catch (e) { return null; }
+}
+function showSaveLoad(mode) {
+  const slots = ['1', '2', '3', 'auto'];
+  let h = '<h2>' + (mode === 'save' ? 'Guardar partida' : 'Cargar partida') + '</h2><table><tr><th>Ranura</th><th>Contenido</th><th></th></tr>';
+  for (const k of slots) {
+    const inf = slotInfo(k);
+    h += '<tr><td class="serif gold">' + (k === 'auto' ? 'Autoguardado' : 'Ranura ' + k) + '</td><td>' + (inf ? inf.date + ' · prestigio ' + fmt(inf.prestige) + ' <span class="faint small">' + esc(inf.t) + '</span>' : '<span class="faint">Vacía</span>') + '</td><td class="right" style="white-space:nowrap">';
+    if (mode === 'save' && k !== 'auto') h += '<button class="btn sm primary" data-act="slotsave" data-arg="' + k + '">Guardar aquí</button> ';
+    if (mode === 'load' && inf) h += '<button class="btn sm primary" data-act="slotload" data-arg="' + k + '">Cargar</button> ';
+    if (inf) h += '<button class="btn sm danger" data-act="slotdel" data-arg="' + k + '">Borrar</button>';
+    h += '</td></tr>';
+  }
+  h += '</table><p class="small muted">Se autoguarda cada mes de enero. Las partidas se guardan en el almacenamiento local de este navegador.</p><div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn danger" data-act="newgame">Nueva partida</button><button class="btn" data-act="close">Cerrar</button></div>';
+  showModal(h, true);
+}
+function showGameOver() {
+  const go = S.gameOver, sc = go.score;
+  const titles = { revolucion: ['🔥', '¡Revolución!', 'Las barricadas han llenado las calles de la capital. El pueblo, harto de miseria e injusticia, ha derrocado a tu gobierno. La historia te juzgará con dureza.'],
+    bancarrota: ['📉', 'Bancarrota del Estado', 'Tras dos años sin poder pagar a funcionarios ni soldados, el Estado se ha desmoronado. Los acreedores extranjeros toman el control de las aduanas.'],
+    fin: ['🏆', 'Fin del mandato: 1936', 'Ha pasado un siglo. Valoria ya no es el reino agrario de 1836. Este es el balance de tu gobierno.'] };
+  const T = titles[go.type];
+  const rankTxt = go.rank === 1 ? 'Primera potencia mundial: ¡una hegemonía indiscutible!' : go.rank <= 4 ? 'Valoria es una Gran Potencia (' + go.rank + 'º puesto).' : 'Valoria es una potencia secundaria (' + go.rank + 'º puesto).';
+  showModal('<div class="evic">' + T[0] + '</div><h2>' + T[1] + '</h2><div class="evtext">' + T[2] + '</div>' +
+    (go.type === 'fin' ? '<p class="serif gold" style="text-align:center;font-size:1.15em">' + rankTxt + '</p>' : '<p class="neg" style="text-align:center">Derrota en ' + dateStr() + '.</p>') +
+    '<div class="grid g4"><div class="kpi"><span class="l">Prestigio</span><span class="v">' + fmt(sc.prestige) + '</span></div><div class="kpi"><span class="l">PNB</span><span class="v">' + fmt(sc.gdp) + '</span></div><div class="kpi"><span class="l">Nivel de vida</span><span class="v">' + fmt(sc.sol) + '</span></div><div class="kpi"><span class="l">Puntuación</span><span class="v gold">' + fmt(go.type === 'fin' ? sc.total : Math.round(sc.total / 2)) + '</span></div></div>' +
+    (go.type !== 'fin' ? '<p class="small muted" style="text-align:center">(La puntuación se reduce a la mitad por la derrota.)</p>' : '') +
+    '<div class="row" style="justify-content:center;margin-top:16px;gap:10px"><button class="btn primary" data-act="newgame-now">Nueva partida</button><button class="btn" data-act="loadmenu">Cargar partida</button></div>', true);
+}
+function confirmBox(text, act, arg) {
+  showModal('<h2>¿Estás seguro?</h2><div class="evtext">' + text + '</div><div class="row" style="justify-content:center;gap:10px"><button class="btn danger" data-act="' + act + '" data-arg="' + (arg || '') + '">Sí, adelante</button><button class="btn" data-act="close">Cancelar</button></div>');
+}
+
+/* =====================================================================
+   Sección 12: GUARDADO
+   ===================================================================== */
+function saveSlot(k) {
+  try { S.savedAt = new Date().toLocaleString('es-ES'); localStorage.setItem('valoria_save_' + k, JSON.stringify(S)); return true; }
+  catch (e) { return false; }
+}
+function loadSlot(k) {
+  try {
+    const raw = localStorage.getItem('valoria_save_' + k); if (!raw) return false;
+    const d = JSON.parse(raw);
+    if (!d || !d.pops || !d.market || !d.bld) return false;
+    const fresh = newGame();
+    S = Object.assign(fresh, d);
+    for (const id of BUILDING_IDS) if (!S.bld[id]) S.bld[id] = { level: 0, eff: 0, staff: 0, profit: 0, revenue: 0, pm: 1 };
+    return true;
+  } catch (e) { return false; }
+}
+
+/* =====================================================================
+   Sección 13: BUCLE DE JUEGO Y CONTROLES
+   ===================================================================== */
+function setSpeed(n) {
+  if (n > 0) UI.prevSpeed = n;
+  UI.speed = n; schedule(); renderTop();
+}
+function schedule() {
+  clearTimeout(UI.timer);
+  if (UI.speed > 0) UI.timer = setTimeout(stepLoop, SPEEDS[UI.speed]);
+}
+function stepLoop() {
+  if (!UI.modal && !S.gameOver && !S.pendingEvent) {
+    try { tick(); } catch (e) { console.warn('Error en la simulación:', e); }
+    afterTick();
+  }
+  schedule();
+}
+function afterTick() {
+  if (S.month > 0 && S.month % 12 === 0 && !S.gameOver) { if (saveSlot('auto')) toast('Autoguardado: ' + dateStr()); }
+  renderTop(); renderTabs();
+  if (!UI.mouseDown && !UI.modal) renderPanel();
+  if (S.gameOver) { UI.speed = 0; renderTop(); showGameOver(); }
+  else if (S.pendingEvent) showEvent();
+}
+function act(a, arg, el) {
+  switch (a) {
+    case 'tab': UI.tab = arg; renderTabs(); $('#panel').scrollTop = 0; renderPanel(); break;
+    case 'speed': setSpeed(+arg); break;
+    case 'help': showHelp(); break;
+    case 'close': closeModal(); renderAll(); if (S.gameOver) showGameOver(); else if (S.pendingEvent) showEvent(); break;
+    case 'savemenu': showSaveLoad('save'); break;
+    case 'loadmenu': showSaveLoad('load'); break;
+    case 'slotsave': if (saveSlot(arg)) { toast('Partida guardada en la ranura ' + arg); closeModal(); } else toast('No se pudo guardar (almacenamiento no disponible).'); break;
+    case 'slotload': if (loadSlot(arg)) { closeModal(); UI.speed = 0; renderAll(); toast('Partida cargada: ' + dateStr()); if (S.pendingEvent) showEvent(); else if (S.gameOver) showGameOver(); } else toast('No se pudo cargar la partida.'); break;
+    case 'slotdel': try { localStorage.removeItem('valoria_save_' + arg); } catch (e) { /* sin almacenamiento */ } showSaveLoad(UI.lastSL || 'load'); break;
+    case 'newgame': confirmBox('Se perderá la partida actual si no la has guardado.', 'newgame-now'); break;
+    case 'newgame-now': newGame(); closeModal(); UI.speed = 0; UI.tab = 'resumen'; renderAll(); toast('Nueva partida: enero de 1836'); break;
+    case 'evopt': resolveEvent(+arg); closeModal(); renderAll(); if (S.pendingEvent) showEvent(); break;
+    case 'build': { const r = build(arg); if (r.ok) toast('Obra iniciada: ' + BUILDINGS[arg].n); else toast(r.why); renderAll(); break; }
+    case 'demolish': demolish(arg); renderAll(); break;
+    case 'cancel': cancelQueue(+arg); renderAll(); break;
+    case 'research': if (techAvailable(arg)) { S.research.cur = arg; toast('Investigando: ' + TECHS[arg].n); renderAll(); } break;
+    case 'law': { const [l, o] = arg.split('|'); const r = enactLaw(l, o); toast(r.ok ? 'Ley aprobada: ' + LAWS[l].opts[o].n : r.why); renderAll(); break; }
+    case 'tax': { const [c, v] = arg.split('|'); S.taxes[c] = +v; renderAll(); break; }
+    case 'loan': { const r = takeLoan(+arg); toast(r.ok ? 'Préstamo concedido' : r.why); renderAll(); break; }
+    case 'repay': { const r = repayLoan(+arg); toast(r.ok ? 'Deuda amortizada' : r.why); renderAll(); break; }
+    case 'default': confirmBox('Suspender pagos cancela toda la deuda, pero arruina tu crédito durante 10 años, cuesta prestigio y enfurece a los capitalistas.', 'default-now'); break;
+    case 'default-now': declareDefault(); closeModal(); renderAll(); break;
+  }
+}
+
+/* --- Tooltip --- */
+function hideTip() { const t = $('#tip'); if (t) t.style.display = 'none'; UI.tipEl = null; }
+function onMove(e) {
+  const el = e.target.closest ? e.target.closest('[data-tip]') : null;
+  const t = $('#tip');
+  if (!el) { if (UI.tipEl) hideTip(); return; }
+  if (UI.tipEl !== el) { t.innerHTML = el.getAttribute('data-tip'); t.style.display = 'block'; UI.tipEl = el; }
+  const pad = 14, r = t.getBoundingClientRect();
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + r.width > window.innerWidth - 6) x = e.clientX - r.width - pad;
+  if (y + r.height > window.innerHeight - 6) y = e.clientY - r.height - pad;
+  t.style.left = Math.max(4, x) + 'px'; t.style.top = Math.max(4, y) + 'px';
+}
+
+/* =====================================================================
+   Sección 14: ARRANQUE
+   ===================================================================== */
+function init() {
+  newGame();
+  let loaded = false;
+  try { if (localStorage.getItem('valoria_save_auto') && localStorage.getItem('valoria_seen')) { /* se ofrece en el menú Cargar */ } } catch (e) { /* sin almacenamiento */ }
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-act]'); if (!el || el.getAttribute('aria-disabled') === 'true') return;
+    const a = el.getAttribute('data-act');
+    if (a === 'savemenu') UI.lastSL = 'save'; if (a === 'loadmenu') UI.lastSL = 'load';
+    act(a, el.getAttribute('data-arg'), el);
+  });
+  document.addEventListener('input', e => {
+    const el = e.target; const k = el.getAttribute && el.getAttribute('data-spend'); if (!k) return;
+    S.spend[k] = +el.value;
+    const sv = document.getElementById('sv-' + k); if (sv) sv.textContent = el.value + '%';
+    const se = document.getElementById('se-' + k); if (se) se.textContent = money(SPEND[k].base * S.spend[k] / 100 * spendScale());
+  });
+  document.addEventListener('change', e => { if (e.target.getAttribute && e.target.getAttribute('data-spend')) { renderTop(); } });
+  document.addEventListener('mousedown', () => { UI.mouseDown = true; });
+  document.addEventListener('mouseup', () => { UI.mouseDown = false; });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' && e.target.type !== 'range')) return;
+    if (e.code === 'Space') { e.preventDefault(); if (UI.modal) return; setSpeed(UI.speed > 0 ? 0 : UI.prevSpeed); }
+    else if (e.key === '1' || e.key === '2' || e.key === '3') { if (!UI.modal) setSpeed(+e.key); }
+    else if (e.key === 'Escape' && UI.modal && !S.pendingEvent && !S.gameOver) { closeModal(); renderAll(); }
+  });
+  let rt = null;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (UI.tab === 'resumen') drawResumenCharts(); }, 150); });
+  renderAll();
+  let seen = false; try { seen = !!localStorage.getItem('valoria_seen'); localStorage.setItem('valoria_seen', '1'); } catch (e) { seen = false; }
+  if (!seen) showHelp();
+  void loaded;
+}
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+}
+
+</script>
+</body>
+</html>
