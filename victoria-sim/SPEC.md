@@ -1,4 +1,4 @@
-Crea un juego completo de simulación económica al estilo Victoria 3 en un ÚNICO archivo: /home/diegorl/juegos/victoria-sim/index.html
+Crea un juego completo de simulación económica al estilo Victoria 3 en un ÚNICO archivo: /home/juegos/victoria-sim/index.html
 
 REQUISITOS Duros
 - 100% autocontenido: sin dependencias externas, sin CDN, sin fetch, sin fuentes remotas. Debe funcionar offline al abrirlo con doble clic (file://).
